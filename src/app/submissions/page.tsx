@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -17,6 +17,7 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { FiArrowLeft, FiUpload, FiStar, FiFileText, FiCheckCircle, FiTrash2, FiClock, FiUser } from 'react-icons/fi';
+import { Logo } from '@/components/logo';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -44,7 +45,7 @@ const RATING_OPTIONS = [
   { label: '⭐ Poor', value: '1' },
 ];
 
-export default function SubmissionsPage() {
+function SubmissionsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -244,7 +245,7 @@ export default function SubmissionsPage() {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="gray.50" key="submissions-page">
       <Box bg="white" borderBottom="1px" borderColor="gray.200" px={{ base: 4, md: 6 }} py={4} position="sticky" top={0} zIndex={10} boxShadow="sm">
         <Flex justify="space-between" align="center" maxW="container.xl" mx="auto">
           <HStack gap={4}>
@@ -254,10 +255,15 @@ export default function SubmissionsPage() {
                 <span>Back</span>
               </HStack>
             </Button>
-            <VStack align="start" gap={0}>
-              <Heading size="lg" color="gray.800">Submissions & Evaluations</Heading>
-              <Text fontSize="sm" color="gray.500">Submit work and review performance</Text>
-            </VStack>
+            <HStack gap={3} align="center">
+              <Box borderRadius="lg" overflow="hidden">
+                <Logo size="sm" />
+              </Box>
+              <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
+                <Heading size="md" color="gray.800">Submissions</Heading>
+                <Text fontSize="xs" color="gray.500">Track work</Text>
+              </VStack>
+            </HStack>
           </HStack>
           <HStack gap={4}>
             <HStack gap={2} display={{ base: 'none', md: 'flex' }}>
@@ -470,5 +476,19 @@ export default function SubmissionsPage() {
         </VStack>
       </Container>
     </Box>
+  );
+}
+
+export default function SubmissionsPage() {
+  return (
+    <Suspense fallback={
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="container.xl" py={8}>
+          <ListSkeleton count={5} />
+        </Container>
+      </Box>
+    }>
+      <SubmissionsPageContent />
+    </Suspense>
   );
 }

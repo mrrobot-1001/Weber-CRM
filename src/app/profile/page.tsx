@@ -17,6 +17,7 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { FiArrowLeft, FiUser, FiMail, FiShield, FiSave, FiEdit2, FiLock } from 'react-icons/fi';
+import { Logo } from '@/components/logo';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 
@@ -174,10 +175,15 @@ export default function ProfilePage() {
                 <span>Back</span>
               </HStack>
             </Button>
-            <VStack align="start" gap={0}>
-              <Heading size="lg" color="gray.800">My Profile</Heading>
-              <Text fontSize="sm" color="gray.500">View and edit your profile information</Text>
-            </VStack>
+            <HStack gap={3} align="center">
+              <Box borderRadius="lg" overflow="hidden">
+                <Logo size="sm" />
+              </Box>
+              <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
+                <Heading size="md" color="gray.800">My Profile</Heading>
+                <Text fontSize="xs" color="gray.500">Edit profile</Text>
+              </VStack>
+            </HStack>
           </HStack>
           <HStack gap={4}>
             <Button variant="ghost" size="sm" onClick={handleLogout} borderRadius="lg">Logout</Button>

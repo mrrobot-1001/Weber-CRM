@@ -17,6 +17,7 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { FiArrowLeft, FiPlus, FiTrash2, FiUser, FiMail, FiCopy, FiCheck } from 'react-icons/fi';
+import { Logo } from '@/components/logo';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -226,10 +227,15 @@ export default function UsersPage() {
                 <span>Back</span>
               </HStack>
             </Button>
-            <VStack align="start" gap={0}>
-              <Heading size="lg" color="gray.800">User Management</Heading>
-              <Text fontSize="sm" color="gray.500">Manage team members and permissions</Text>
-            </VStack>
+            <HStack gap={3} align="center">
+              <Box borderRadius="lg" overflow="hidden">
+                <Logo size="sm" />
+              </Box>
+              <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
+                <Heading size="md" color="gray.800">Users</Heading>
+                <Text fontSize="xs" color="gray.500">Manage team</Text>
+              </VStack>
+            </HStack>
           </HStack>
           <HStack gap={4}>
             <HStack gap={2} display={{ base: 'none', md: 'flex' }}>

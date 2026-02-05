@@ -20,6 +20,7 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { FiMenu, FiLogOut, FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiChevronRight, FiPlus, FiUser } from 'react-icons/fi';
+import { Logo } from '@/components/logo';
 import { apiService, User } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 import { DashboardCardSkeleton } from '@/components/ui/skeleton';
@@ -125,17 +126,16 @@ export default function DashboardPage() {
             >
               <FiMenu />
             </IconButton>
-            <HStack gap={3}>
-              <Box 
-                p={2} 
-                borderRadius="lg" 
-                bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              >
-                <FiBarChart2 size={20} color="white" />
+            <HStack gap={3} align="center">
+              <Box borderRadius="lg" overflow="hidden">
+                <Logo size="sm" />
               </Box>
-              <Heading size="lg" bgGradient="linear(to-r, brand.600, purple.600)" bgClip="text">
-                Weber CRM
-              </Heading>
+              <VStack gap={0} display={{ base: 'none', md: 'flex' }}>
+                <Heading size="md" color="gray.800">
+                  Weber CRM
+                </Heading>
+                <Text fontSize="xs" color="gray.500">Dashboard</Text>
+              </VStack>
             </HStack>
           </HStack>
           
