@@ -93,3 +93,80 @@ export async function DELETE(
   }
 }
 
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return errorResponse('Unauthorized', 401);
+    }
+
+    const { id } = await params;
+    const targetUserId = parseInt(id, 10);
+
+    if (isNaN(targetUserId)) {
+      return errorResponse('Invalid user ID', 400);
+    }
+
+    // Allow users to update their own profile, or admins (CEO/COO) to update users
+    const isSelf = user.userId === targetUserId;
+    const isAdmin = ['CEO', 'COO'].includes(user.roleName);
+    
+    if (!isSelf && !isAdmin) {
+      return errorResponse('Forbidden: You can only update your own profile', 403);
+    }
+
+    const body = await req.json();
+    const { firstName, lastName, email } = body;
+
+    if (!firstName || !lastName || !email) {
+      return errorResponse('Missing required fields', 400);
+    }
+
+    // Update query
+    const result = await query(
+      `UPDATE users 
+       SET first_name = $1, last_name = $2, email = $3, updated_at = NOW() 
+       WHERE id = $4 
+       RETURNING id, username, email, first_name, last_name, role_id, status, is_departmental_head`,
+      [firstName, lastName, email, targetUserId]
+    );
+
+    if (result.rows.length === 0) {
+      return errorResponse('User not found', 404);
+    }
+
+    const updatedDbUser = result.rows[0];
+    
+    // Fetch role name for response consistency
+    const roleRes = await query('SELECT name FROM roles WHERE id = $1', [updatedDbUser.role_id]);
+    const roleName = roleRes.rows[0]?.name;
+
+    const responseUser = {
+      id: updatedDbUser.id,
+      username: updatedDbUser.username,
+      email: updatedDbUser.email,
+      firstName: updatedDbUser.first_name,
+      lastName: updatedDbUser.last_name,
+      role: roleName,
+      status: updatedDbUser.status,
+      isDepartmentalHead: updatedDbUser.is_departmental_head
+    };
+
+    logger.info(`User ${targetUserId} updated by ${user.username}`);
+
+    return jsonResponse(true, 'User updated successfully', responseUser);
+
+  } catch (error: any) {
+    logger.error('Error updating user:', error);
+    // Check for unique constraint violation on email
+    if (error.code === '23505') {
+       return errorResponse('Email already exists', 409);
+    }
+    return errorResponse('Error updating user', 500, error);
+  }
+}
+
+
