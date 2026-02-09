@@ -17,8 +17,9 @@ import {
   Flex,
   Avatar,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiPlus, FiTrash2, FiClipboard, FiCalendar, FiUser, FiAlertCircle, FiCheckSquare } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiClipboard, FiCalendar, FiUser, FiAlertCircle, FiCheckSquare, FiSearch } from 'react-icons/fi';
 import { Logo } from '@/components/logo';
+import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -26,6 +27,8 @@ import { StatusBadge, PriorityBadge } from '@/components/ui/badges';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/common';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { wsService } from '@/services/websocket';
 
 const PRIORITY_OPTIONS = [
   { label: 'Low', value: 'low' },
@@ -62,10 +65,47 @@ export default function AssignmentsPage() {
     priority: 'medium',
     dueDate: '',
   });
+
+  // Sort and filter states
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('DESC');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
   const [mounted, setMounted] = useState(false);
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    setCurrentDate(new Date());
+  }, []);
+
+  // WebSocket connection
+  useWebSocket();
+
+  // Listen for real-time assignment changes
+  useEffect(() => {
+    const handleAssignmentCreated = (data: any) => {
+      loadAssignments();
+    };
+
+    const handleAssignmentUpdated = (data: any) => {
+      loadAssignments();
+    };
+
+    const handleAssignmentDeleted = (data: any) => {
+      loadAssignments();
+    };
+
+    wsService.on('assignment_created', handleAssignmentCreated);
+    wsService.on('assignment_updated', handleAssignmentUpdated);
+    wsService.on('assignment_deleted', handleAssignmentDeleted);
+
+    return () => {
+      wsService.removeListener('assignment_created', handleAssignmentCreated);
+      wsService.removeListener('assignment_updated', handleAssignmentUpdated);
+      wsService.removeListener('assignment_deleted', handleAssignmentDeleted);
+    };
   }, []);
 
   useEffect(() => {
@@ -95,6 +135,12 @@ export default function AssignmentsPage() {
   const loadAssignments = async () => {
     try {
       setLoading(true);
+      const params = new URLSearchParams();
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
+      if (filterStatus) {
+        params.append('status', filterStatus);
+      }
       const response = await apiService.getAssignments();
       setAssignments(response.data || []);
     } catch (err: any) {
@@ -169,11 +215,6 @@ export default function AssignmentsPage() {
     }
   }, [currentUser]);
 
-  const handleLogout = async () => {
-    await apiService.logout();
-    router.push('/login');
-  };
-
   const handleDeleteAssignment = async () => {
     if (!deleteConfirm) return;
     setDeleting(true);
@@ -202,7 +243,17 @@ export default function AssignmentsPage() {
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate assignedTo field
+    // Validate required fields
+    if (!form.title || form.title.trim() === '') {
+      toaster.create({
+        title: 'Validation Error',
+        description: 'Please enter an assignment title',
+        type: 'error',
+        duration: 5000,
+      });
+      return;
+    }
+
     if (!form.assignedTo || form.assignedTo === '') {
       toaster.create({
         title: 'Validation Error',
@@ -216,11 +267,11 @@ export default function AssignmentsPage() {
     setCreating(true);
     try {
       const payload = {
-        title: form.title,
-        description: form.description,
+        title: form.title.trim(),
+        description: form.description.trim() || '',
         assignedTo: Number(form.assignedTo),
         priority: form.priority,
-        dueDate: form.dueDate || undefined,
+        dueDate: form.dueDate || null,
       };
       await apiService.createAssignment(payload);
       toaster.create({
@@ -246,65 +297,42 @@ export default function AssignmentsPage() {
   const canAssignWork = ['CEO', 'COO', 'Departmental_Head', 'Senior_Associate', 'Departmental Head', 'Senior Associate', 'DEPT_HEAD', 'SENIOR'].includes(currentUser?.role || '') || [1, 2, 3, 4].includes(currentUser?.roleId);
   const canManageUsers = currentUser?.role === 'CEO' || currentUser?.role === 'COO' || [1, 2].includes(currentUser?.roleId);
 
-  const formatDate = (value?: string) => {
-    if (!value) return 'No due date';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const getRoleId = () => {
+    const roleMap: Record<string, number> = {
+      'CEO': 1, 'COO': 2, 'Departmental_Head': 3, 'DEPT_HEAD': 3,
+      'Senior_Associate': 4, 'SENIOR': 4, 'Associate': 5, 'ASSOCIATE': 5,
+    };
+    return currentUser?.roleId || roleMap[currentUser?.role] || 99;
   };
 
-  const getInitials = (username?: string) => {
-    if (!username) return '?';
-    return username.slice(0, 2).toUpperCase();
-  };
+  const isCeoOrCoo = () => [1, 2].includes(getRoleId());
+  const isDeptHead = () => getRoleId() === 3;
 
   const userOptions = users.map(u => ({ label: `${u.username} (${u.role})`, value: String(u.id) }));
 
   const isOverdue = (dueDate?: string) => {
-    if (!dueDate) return false;
-    return new Date(dueDate) < new Date();
+    if (!dueDate || !currentDate) return false;
+    return new Date(dueDate) < currentDate;
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
     <Box minH="100vh" bg="gray.50">
-      <Box bg="white" borderBottom="1px" borderColor="gray.200" px={{ base: 4, md: 6 }} py={4} position="sticky" top={0} zIndex={10} boxShadow="sm">
-        <Flex justify="space-between" align="center" maxW="container.xl" mx="auto">
-          <HStack gap={4}>
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} borderRadius="lg" _hover={{ bg: 'gray.100' }}>
-              <HStack gap={2}>
-                <FiArrowLeft />
-                <span>Back</span>
-              </HStack>
-            </Button>
-            <HStack gap={3} align="center">
-              <Box borderRadius="lg" overflow="hidden">
-                <Logo size="sm" />
-              </Box>
-              <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
-                <Heading size="md" color="gray.800">Assignments</Heading>
-                <Text fontSize="xs" color="gray.500">Manage work</Text>
-              </VStack>
-            </HStack>
-          </HStack>
-          <HStack gap={4}>
-            <HStack gap={2} display={{ base: 'none', md: 'flex' }}>
-              <Avatar.Root size="sm">
-                <Avatar.Fallback bg="brand.500" color="white">
-                  {getInitials(currentUser?.username)}
-                </Avatar.Fallback>
-              </Avatar.Root>
-              <VStack gap={0} align="end">
-                <Text fontWeight="semibold" fontSize="sm">{currentUser?.firstName} {currentUser?.lastName}</Text>
-                <Text fontSize="xs" color="gray.500">{currentUser?.role}</Text>
-              </VStack>
-            </HStack>
-            <Button variant="ghost" size="sm" onClick={handleLogout} borderRadius="lg">Logout</Button>
-          </HStack>
-        </Flex>
-      </Box>
+      <Navbar 
+        title="Assignments" 
+        subtitle="Manage work" 
+        user={currentUser} 
+        showBack={true} 
+      />
 
       <Container maxW="container.xl" py={8}>
         <VStack gap={6} align="stretch">
-          {canAssignWork ? (
+        {currentUser?.role !== 'ASSOCIATE' ? (
+          <Box mb={8}>
             <Card.Root borderRadius="lg" borderWidth="1px" borderColor="gray.200" bg="white" boxShadow="none">
               <Card.Header pb={2}>
                 <HStack gap={3}>
@@ -319,7 +347,10 @@ export default function AssignmentsPage() {
                 <form onSubmit={handleCreateAssignment}>
                   <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm"><HStack gap={1}><FiClipboard size={14} /><span>Title</span></HStack></Text>
+                      <HStack gap={1} mb={2}>
+                        <FiClipboard size={14} />
+                        <Text fontWeight="medium" fontSize="sm">Title</Text>
+                      </HStack>
                       <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Enter assignment title" borderRadius="lg" required />
                     </Box>
                     <Box>
@@ -330,13 +361,19 @@ export default function AssignmentsPage() {
                         <Select label="Assign To" value={form.assignedTo} onChange={(value) => setForm({ ...form, assignedTo: value })} options={userOptions} placeholder="Select team member" required />
                       ) : (
                         <>
-                          <Text mb={2} fontWeight="medium" fontSize="sm"><HStack gap={1}><FiUser size={14} /><span>Assign To (User ID)</span></HStack></Text>
+                          <HStack gap={1} mb={2}>
+                            <FiUser size={14} />
+                            <Text fontWeight="medium" fontSize="sm">Assign To (User ID)</Text>
+                          </HStack>
                           <Input type="number" value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })} placeholder="Enter user ID" borderRadius="lg" required />
                         </>
                       )}
                     </Box>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm"><HStack gap={1}><FiCalendar size={14} /><span>Due Date</span></HStack></Text>
+                      <HStack gap={1} mb={2}>
+                        <FiCalendar size={14} />
+                        <Text fontWeight="medium" fontSize="sm">Due Date</Text>
+                      </HStack>
                       <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} borderRadius="lg" />
                     </Box>
                     <Box gridColumn={{ base: 'auto', md: '1 / -1' }}>
@@ -347,13 +384,15 @@ export default function AssignmentsPage() {
                   <Button mt={6} type="submit" bg="gray.900" color="white" size="md" borderRadius="md" loading={creating} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
                     <HStack gap={2}>
                       <FiPlus size={16} />
-                      <span>Create Assignment</span>
+                      <Text>Create Assignment</Text>
                     </HStack>
                   </Button>
                 </form>
               </Card.Body>
             </Card.Root>
-          ) : (
+          </Box>
+        ) : (
+           <Box mb={8}>
             <Card.Root borderRadius="lg" bg="gray.50" borderColor="gray.200" borderWidth="1px" boxShadow="none">
               <Card.Body>
                 <HStack gap={3}>
@@ -362,16 +401,78 @@ export default function AssignmentsPage() {
                 </HStack>
               </Card.Body>
             </Card.Root>
-          )}
+          </Box>
+        )}
 
           <Card.Root borderRadius="lg" borderWidth="1px" borderColor="gray.200" bg="white" boxShadow="none">
-            <Card.Header pb={2}>
-              <HStack justify="space-between">
-                <VStack align="start" gap={0}>
-                  <Heading size="md" color="gray.900" fontWeight="600">Your Assignments</Heading>
-                  <Text fontSize="sm" color="gray.500">{assignments.length} assignments</Text>
-                </VStack>
-              </HStack>
+            <Card.Header pb={4}>
+              <VStack align="stretch" gap={4}>
+                <HStack justify="space-between">
+                  <VStack align="start" gap={0}>
+                    <Heading size="md" color="gray.900" fontWeight="600">Your Assignments</Heading>
+                    <Text fontSize="sm" color="gray.500">{assignments.length} assignments</Text>
+                  </VStack>
+                </HStack>
+
+                {/* Search */}
+                <HStack gap={3} pb={3} borderBottom="1px" borderColor="gray.200">
+                  <FiSearch color="gray.400" size={18} />
+                  <Input
+                    type="text"
+                    placeholder="Search assignments by title or assignee..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    size="sm"
+                    borderRadius="md"
+                    bg="white"
+                  />
+                  <Select
+                    label=""
+                    value={filterStatus}
+                    onChange={(value) => setFilterStatus(value)}
+                    options={[
+                      { label: 'All Statuses', value: '' },
+                      { label: 'Pending', value: 'pending' },
+                      { label: 'In Progress', value: 'in_progress' },
+                      { label: 'Submitted', value: 'submitted' },
+                      { label: 'Evaluated', value: 'evaluated' },
+                      { label: 'Completed', value: 'completed' },
+                    ]}
+                  />
+                </HStack>
+
+                {/* Sorting */}
+                <HStack gap={3} pb={3} borderBottom="1px" borderColor="gray.200">
+                  <Text fontSize="sm" fontWeight="medium" color="gray.700">Sort by:</Text>
+                  <HStack gap={2}>
+                    <Select
+                      label=""
+                      value={sortBy}
+                      onChange={(value) => {
+                        setSortBy(value);
+                        loadAssignments();
+                      }}
+                      options={[
+                        { label: 'Created Date', value: 'created_at' },
+                        { label: 'Due Date', value: 'due_date' },
+                        { label: 'Priority', value: 'priority' },
+                        { label: 'Title', value: 'title' },
+                      ]}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
+                        loadAssignments();
+                      }}
+                      borderRadius="md"
+                    >
+                      {sortOrder === 'DESC' ? '↓ Descending' : '↑ Ascending'}
+                    </Button>
+                  </HStack>
+                </HStack>
+              </VStack>
             </Card.Header>
             <Card.Body pt={4}>
               {loading ? (
@@ -380,7 +481,15 @@ export default function AssignmentsPage() {
                 <EmptyState icon={<FiClipboard size={40} />} title="No assignments found" description="There are no assignments to display" />
               ) : (
                 <VStack gap={3} align="stretch">
-                  {assignments.map((assignment) => (
+                  {assignments
+                    .filter(a => {
+                      if (searchTerm && !a.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
+                          !a.assigned_to_username.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                          !a.assigned_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                      if (filterStatus && a.status !== filterStatus) return false;
+                      return true;
+                    })
+                    .map((assignment) => (
                     <Box key={assignment.id} p={4} borderWidth="1px" borderRadius="md" bg="white" transition="all 0.15s" _hover={{ borderColor: 'gray.300' }} borderLeftWidth="3px" borderLeftColor={assignment.status === 'completed' ? 'gray.400' : isOverdue(assignment.due_date) ? 'gray.900' : 'gray.300'}>
                       <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
                         <Box flex={1}>
@@ -414,7 +523,7 @@ export default function AssignmentsPage() {
                                 onClick={() => router.push(`/submissions?assignmentId=${assignment.id}`)} _hover={{ bg: 'gray.800' }}>
                                 <HStack gap={1}>
                                   <FiCheckSquare size={14} />
-                                  <span>Submit</span>
+                                  <Text>Submit</Text>
                                 </HStack>
                               </Button>
                             )}
@@ -423,7 +532,7 @@ export default function AssignmentsPage() {
                                 onClick={() => setDeleteConfirm({ id: assignment.id, title: assignment.title })} _hover={{ bg: 'gray.50', borderColor: 'gray.400' }}>
                                 <HStack gap={1}>
                                   <FiTrash2 size={14} />
-                                  <span>Delete</span>
+                                  <Text>Delete</Text>
                                 </HStack>
                               </Button>
                             )}

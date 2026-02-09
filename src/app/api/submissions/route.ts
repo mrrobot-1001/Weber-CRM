@@ -12,6 +12,26 @@ export async function GET(req: NextRequest) {
       return errorResponse('Unauthorized', 401);
     }
 
+    // Get query parameters for sorting/filtering
+    const sortBy = req.nextUrl.searchParams.get('sortBy') || 'submission_date';
+    const sortOrder = req.nextUrl.searchParams.get('sortOrder') || 'DESC';
+    const status = req.nextUrl.searchParams.get('status');
+
+    // Validate sort parameters to prevent SQL injection
+    const validSortFields = ['submission_date', 'status', 'assignment_title'];
+    const validSortOrders = ['ASC', 'DESC'];
+    
+    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'submission_date';
+    const safeSortOrder = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+    let whereClause = 'WHERE (ws.submitted_by = $1 OR wa.assigned_by = $1)';
+    const params: (string | number)[] = [user.userId];
+
+    if (status && ['submitted', 'evaluated', 'completed'].includes(status)) {
+      whereClause += ` AND ws.status = $${params.length + 1}`;
+      params.push(status);
+    }
+
     const result = await query(`
       SELECT ws.id, ws.assignment_id, ws.submitted_by, ws.submission_notes, ws.status,
              wa.title as assignment_title,
@@ -20,9 +40,9 @@ export async function GET(req: NextRequest) {
       FROM work_submissions ws
       JOIN work_assignments wa ON ws.assignment_id = wa.id
       JOIN users u ON ws.submitted_by = u.id
-      WHERE ws.submitted_by = $1 OR wa.assigned_by = $1
-      ORDER BY ws.submission_date DESC
-    `, [user.userId]);
+      ${whereClause}
+      ORDER BY ws.${safeSortBy} ${safeSortOrder}
+    `, params);
 
     return jsonResponse(true, 'Submissions retrieved', result.rows);
   } catch (error: any) {

@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "grep_params",
+			"type": "shell",
+			"command": "grep \"params.*push\"",
+			"args": [
+				"src/app/api/submissions/route.ts",
+				"src/app/api/users/route.ts"
+			],
+			"group": "search"
+		}
+	]
+}

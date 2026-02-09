@@ -140,8 +140,13 @@ class ApiService {
     return response.data;
   }
 
-  async getAssignments() {
-    const response = await axios.get(`${API_URL}/assignments`, {
+  async getAssignments(sortBy?: string, sortOrder?: string, status?: string) {
+    const params = new URLSearchParams();
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+    if (status) params.append('status', status);
+    
+    const response = await axios.get(`${API_URL}/assignments${params.toString() ? '?' + params.toString() : ''}`, {
       headers: this.getHeaders(),
     });
     return response.data;
@@ -168,8 +173,13 @@ class ApiService {
     return response.data;
   }
 
-  async getSubmissions() {
-    const response = await axios.get(`${API_URL}/submissions`, {
+  async getSubmissions(sortBy?: string, sortOrder?: string, status?: string) {
+    const params = new URLSearchParams();
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+    if (status) params.append('status', status);
+    
+    const response = await axios.get(`${API_URL}/submissions${params.toString() ? '?' + params.toString() : ''}`, {
       headers: this.getHeaders(),
     });
     return response.data;
@@ -189,8 +199,14 @@ class ApiService {
     return response.data;
   }
 
-  async getEvaluations() {
-    const response = await axios.get(`${API_URL}/evaluations`, {
+  async getEvaluations(sortBy?: string, sortOrder?: string, rating?: string, status?: string) {
+    const params = new URLSearchParams();
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+    if (rating) params.append('rating', rating);
+    if (status) params.append('status', status);
+    
+    const response = await axios.get(`${API_URL}/evaluations${params.toString() ? '?' + params.toString() : ''}`, {
       headers: this.getHeaders(),
     });
     return response.data;

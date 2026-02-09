@@ -13,6 +13,32 @@ export async function GET(req: NextRequest) {
       return errorResponse('Unauthorized', 401);
     }
 
+    // Get query parameters for sorting/filtering
+    const sortBy = req.nextUrl.searchParams.get('sortBy') || 'evaluation_date';
+    const sortOrder = req.nextUrl.searchParams.get('sortOrder') || 'DESC';
+    const rating = req.nextUrl.searchParams.get('rating');
+    const status = req.nextUrl.searchParams.get('status');
+
+    // Validate sort parameters to prevent SQL injection
+    const validSortFields = ['evaluation_date', 'rating', 'status'];
+    const validSortOrders = ['ASC', 'DESC'];
+    
+    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'evaluation_date';
+    const safeSortOrder = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+    let whereClause = 'WHERE (e.evaluated_by = $1 OR ws.submitted_by = $1)';
+    const params: (string | number)[] = [user.userId];
+
+    if (rating && ['1', '2', '3', '4', '5'].includes(rating)) {
+      whereClause += ` AND e.rating = $${params.length + 1}`;
+      params.push(parseInt(rating));
+    }
+
+    if (status && ['pending', 'completed'].includes(status)) {
+      whereClause += ` AND e.status = $${params.length + 1}`;
+      params.push(status);
+    }
+
     const result = await query(`
       SELECT e.id, e.submission_id, e.evaluated_by, e.rating, e.comments, e.status,
              ws.submitted_by, wa.title as assignment_title,
@@ -24,9 +50,9 @@ export async function GET(req: NextRequest) {
       JOIN work_assignments wa ON ws.assignment_id = wa.id
       JOIN users u_eval ON e.evaluated_by = u_eval.id
       JOIN users u_sub ON ws.submitted_by = u_sub.id
-      WHERE e.evaluated_by = $1 OR ws.submitted_by = $1
-      ORDER BY e.evaluation_date DESC
-    `, [user.userId]);
+      ${whereClause}
+      ORDER BY e.${safeSortBy} ${safeSortOrder}
+    `, params);
 
     return jsonResponse(true, 'Evaluations retrieved', result.rows);
   } catch (error: any) {

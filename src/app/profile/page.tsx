@@ -16,8 +16,8 @@ import {
   Flex,
   Avatar,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiUser, FiMail, FiShield, FiSave, FiEdit2, FiLock } from 'react-icons/fi';
-import { Logo } from '@/components/logo';
+import { FiUser, FiMail, FiShield, FiSave, FiEdit2, FiLock } from 'react-icons/fi';
+import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 
@@ -64,22 +64,23 @@ export default function ProfilePage() {
     }
   }, [router, mounted]);
 
-  const handleLogout = async () => {
-    await apiService.logout();
-    router.push('/login');
-  };
+
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Update the user in localStorage (in real app, you'd call an API)
-      const updatedUser = {
-        ...currentUser,
+      if (!currentUser?.id) throw new Error("User ID not found");
+      
+      const payload = {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
       };
+      
+      const updatedUser = await apiService.updateUser(currentUser.id, payload);
+      
+      // Update the user in localStorage to keep session in sync
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
       setEditing(false);
@@ -166,30 +167,12 @@ export default function ProfilePage() {
 
   return (
     <Box minH="100vh" bg="gray.50">
-      <Box bg="white" borderBottom="1px" borderColor="gray.200" px={{ base: 4, md: 6 }} py={4} position="sticky" top={0} zIndex={10} boxShadow="sm">
-        <Flex justify="space-between" align="center" maxW="container.xl" mx="auto">
-          <HStack gap={4}>
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} borderRadius="lg" _hover={{ bg: 'gray.100' }}>
-              <HStack gap={2}>
-                <FiArrowLeft />
-                <span>Back</span>
-              </HStack>
-            </Button>
-            <HStack gap={3} align="center">
-              <Box borderRadius="lg" overflow="hidden">
-                <Logo size="sm" />
-              </Box>
-              <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
-                <Heading size="md" color="gray.800">My Profile</Heading>
-                <Text fontSize="xs" color="gray.500">Edit profile</Text>
-              </VStack>
-            </HStack>
-          </HStack>
-          <HStack gap={4}>
-            <Button variant="ghost" size="sm" onClick={handleLogout} borderRadius="lg">Logout</Button>
-          </HStack>
-        </Flex>
-      </Box>
+      <Navbar 
+        title="My Profile" 
+        subtitle="Manage your account" 
+        user={currentUser} 
+        showBack={true} 
+      />
 
       <Container maxW="container.lg" py={8}>
         <VStack gap={6} align="stretch">
@@ -232,7 +215,7 @@ export default function ProfilePage() {
                 >
                   <HStack gap={2}>
                     <FiEdit2 />
-                    <span>{editing ? 'Cancel' : 'Edit Profile'}</span>
+                    <Text>{editing ? 'Cancel' : 'Edit Profile'}</Text>
                   </HStack>
                 </Button>
               </Flex>
@@ -296,7 +279,7 @@ export default function ProfilePage() {
                       >
                         <HStack gap={2}>
                           <FiSave />
-                          <span>Save Changes</span>
+                          <Text>Save Changes</Text>
                         </HStack>
                       </Button>
                     </VStack>
@@ -405,7 +388,7 @@ export default function ProfilePage() {
                         >
                           <HStack gap={2}>
                             <FiLock />
-                            <span>Update Password</span>
+                            <Text>Update Password</Text>
                           </HStack>
                         </Button>
                       </HStack>
@@ -424,7 +407,7 @@ export default function ProfilePage() {
                     >
                       <HStack gap={2}>
                         <FiLock />
-                        <span>Change Password</span>
+                        <Text>Change Password</Text>
                       </HStack>
                     </Button>
                   </VStack>

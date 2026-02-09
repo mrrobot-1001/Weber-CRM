@@ -18,6 +18,7 @@ import {
 } from '@chakra-ui/react';
 import { FiArrowLeft, FiPlus, FiTrash2, FiUser, FiMail, FiCopy, FiCheck } from 'react-icons/fi';
 import { Logo } from '@/components/logo';
+import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -127,11 +128,6 @@ export default function UsersPage() {
     }
   };
 
-  const handleLogout = async () => {
-    await apiService.logout();
-    router.push('/login');
-  };
-
   const handleDeleteUser = async () => {
     if (!deleteConfirm) return;
     setDeleting(true);
@@ -218,44 +214,13 @@ export default function UsersPage() {
 
   return (
     <Box minH="100vh" bg="gray.50">
-      <Box bg="white" borderBottom="1px" borderColor="gray.200" px={{ base: 4, md: 6 }} py={4} position="sticky" top={0} zIndex={10} boxShadow="sm">
-        <Flex justify="space-between" align="center" maxW="container.xl" mx="auto">
-          <HStack gap={4}>
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} borderRadius="lg" _hover={{ bg: 'gray.100' }}>
-              <HStack gap={2}>
-                <FiArrowLeft />
-                <span>Back</span>
-              </HStack>
-            </Button>
-            <HStack gap={3} align="center">
-              <Box borderRadius="lg" overflow="hidden">
-                <Logo size="sm" />
-              </Box>
-              <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
-                <Heading size="md" color="gray.800">Users</Heading>
-                <Text fontSize="xs" color="gray.500">Manage team</Text>
-              </VStack>
-            </HStack>
-          </HStack>
-          <HStack gap={4}>
-            <HStack gap={2} display={{ base: 'none', md: 'flex' }}>
-              <Avatar.Root 
-                size="sm"
-              >
-                <Avatar.Fallback bg="brand.500" color="white">
-                  {getInitials(currentUser?.firstName, currentUser?.lastName)}
-                </Avatar.Fallback>
-              </Avatar.Root>
-              <VStack gap={0} align="end">
-                <Text fontWeight="semibold" fontSize="sm">{currentUser?.firstName} {currentUser?.lastName}</Text>
-                <Text fontSize="xs" color="gray.500">{currentUser?.role}</Text>
-              </VStack>
-            </HStack>
-            <Button variant="ghost" size="sm" onClick={handleLogout} borderRadius="lg">Logout</Button>
-          </HStack>
-        </Flex>
-      </Box>
-
+      <Navbar 
+        title="Users" 
+        subtitle="Manage team" 
+        user={currentUser} 
+        showBack={true} 
+      />
+      
       <Container maxW="container.xl" py={8}>
         <VStack gap={6} align="stretch">
           {tempPassword && (
@@ -270,7 +235,7 @@ export default function UsersPage() {
                   <Button onClick={handleCopyPassword} colorScheme="blue" variant="solid" borderRadius="lg">
                     <HStack gap={2}>
                       {copiedPassword ? <FiCheck /> : <FiCopy />}
-                      <span>{copiedPassword ? 'Copied!' : 'Copy Password'}</span>
+                      <Text>{copiedPassword ? 'Copied!' : 'Copy Password'}</Text>
                     </HStack>
                   </Button>
                 </HStack>
@@ -293,11 +258,17 @@ export default function UsersPage() {
                 <form onSubmit={handleCreateUser}>
                   <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm"><HStack gap={1}><FiMail size={14} /><span>Email</span></HStack></Text>
+                      <HStack gap={1} mb={2}>
+                        <FiMail size={14} />
+                        <Text fontWeight="medium" fontSize="sm">Email</Text>
+                      </HStack>
                       <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@company.com" borderRadius="lg" required />
                     </Box>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm"><HStack gap={1}><FiUser size={14} /><span>Username</span></HStack></Text>
+                      <HStack gap={1} mb={2}>
+                        <FiUser size={14} />
+                        <Text fontWeight="medium" fontSize="sm">Username</Text>
+                      </HStack>
                       <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="john_doe" borderRadius="lg" required />
                     </Box>
                     <Box>
@@ -333,7 +304,7 @@ export default function UsersPage() {
                   >
                     <HStack gap={2}>
                       <FiPlus size={16} />
-                      <span>Create User</span>
+                      <Text>Create User</Text>
                     </HStack>
                   </Button>
                 </form>
@@ -393,7 +364,7 @@ export default function UsersPage() {
                             >
                               <HStack gap={1}>
                                 <FiTrash2 size={14} />
-                                <span>Delete</span>
+                                <Text>Delete</Text>
                               </HStack>
                             </Button>
                           )}

@@ -19,8 +19,9 @@ import {
   useDisclosure,
   Avatar,
 } from '@chakra-ui/react';
-import { FiMenu, FiLogOut, FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiChevronRight, FiPlus, FiUser } from 'react-icons/fi';
+import { FiMenu, FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiChevronRight, FiPlus, FiUser, FiStar } from 'react-icons/fi';
 import { Logo } from '@/components/logo';
+import { Navbar } from '@/components/navbar';
 import { apiService, User } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 import { DashboardCardSkeleton } from '@/components/ui/skeleton';
@@ -37,9 +38,11 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [currentDate, setCurrentDate] = useState('');
 
   useEffect(() => {
     setMounted(true);
+    setCurrentDate(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
   }, []);
 
   useEffect(() => {
@@ -80,115 +83,17 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await apiService.logout();
-      toaster.create({
-        title: 'Logged out',
-        description: 'You have been successfully logged out.',
-        type: 'success',
-        duration: 3000,
-      });
-      router.push('/login');
-    } catch {
-      router.push('/login');
-    }
-  };
-
   const isManagementRole = user?.role === 'CEO' || user?.role === 'COO' || user?.role === 'Departmental_Head';
-
-  const getInitials = (firstName?: string, lastName?: string) => {
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
-  };
 
   return (
     <Box minH="100vh" bg="gray.50">
       {/* Top Navigation */}
-      <Box 
-        bg="white" 
-        borderBottom="1px" 
-        borderColor="gray.200" 
-        px={{ base: 4, md: 6 }} 
-        py={3}
-        position="sticky"
-        top={0}
-        zIndex={10}
-        boxShadow="sm"
-      >
-        <Flex justify="space-between" align="center" maxW="container.2xl" mx="auto">
-          <HStack gap={4}>
-            <IconButton 
-              aria-label="Menu" 
-              onClick={onOpen} 
-              display={{ base: 'flex', md: 'none' }}
-              variant="ghost"
-              size="lg"
-            >
-              <FiMenu />
-            </IconButton>
-            <HStack gap={3} align="center">
-              <Box borderRadius="lg" overflow="hidden">
-                <Logo size="sm" />
-              </Box>
-              <VStack gap={0} display={{ base: 'none', md: 'flex' }}>
-                <Heading size="md" color="gray.800">
-                  Weber CRM
-                </Heading>
-                <Text fontSize="xs" color="gray.500">Dashboard</Text>
-              </VStack>
-            </HStack>
-          </HStack>
-          
-          <HStack gap={4}>
-            <HStack 
-              gap={3} 
-              display={{ base: 'none', md: 'flex' }}
-              cursor="pointer"
-              p={2}
-              borderRadius="lg"
-              _hover={{ bg: 'gray.100' }}
-              onClick={() => router.push('/profile')}
-              transition="all 0.2s"
-            >
-              <Avatar.Root size="sm">
-                <Avatar.Fallback bg="gray.900" color="white">
-                  {getInitials(user?.firstName, user?.lastName)}
-                </Avatar.Fallback>
-              </Avatar.Root>
-              <VStack gap={0} align="end">
-                <Text fontWeight="semibold" fontSize="sm" color="gray.800">{user?.firstName} {user?.lastName}</Text>
-                <Text fontSize="xs" color="gray.500">{user?.role}</Text>
-              </VStack>
-            </HStack>
-            <Menu.Root>
-              <Menu.Trigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  borderRadius="lg"
-                  _hover={{ bg: 'gray.100' }}
-                >
-                  <FiLogOut />
-                </Button>
-              </Menu.Trigger>
-              <Menu.Content>
-                <Menu.Item value="profile" onClick={() => router.push('/profile')}>
-                  <HStack gap={2}>
-                    <FiUser />
-                    <span>My Profile</span>
-                  </HStack>
-                </Menu.Item>
-                <Menu.Item value="logout" onClick={handleLogout}>
-                  <HStack gap={2}>
-                    <FiLogOut />
-                    <span>Logout</span>
-                  </HStack>
-                </Menu.Item>
-              </Menu.Content>
-            </Menu.Root>
-          </HStack>
-        </Flex>
-      </Box>
+      <Navbar 
+        title="Weber CRM" 
+        subtitle="Dashboard" 
+        user={user} 
+        onMenuClick={onOpen} 
+      />
 
       {/* Mobile Sidebar Drawer */}
       <Drawer.Root open={open} onOpenChange={({ open }) => open ? onOpen() : onClose()} placement="start">
@@ -249,6 +154,18 @@ export default function DashboardPage() {
               >
                 <FiCheckSquare style={{ marginRight: '12px' }} />
                 Submissions
+                <Box ml="auto"><FiChevronRight /></Box>
+              </Button>
+              <Button 
+                variant="ghost" 
+                justifyContent="flex-start" 
+                onClick={() => router.push('/evaluations')}
+                borderRadius="lg"
+                py={6}
+                _hover={{ bg: 'gray.100' }}
+              >
+                <FiStar style={{ marginRight: '12px' }} />
+                Evaluations
                 <Box ml="auto"><FiChevronRight /></Box>
               </Button>
               <Box borderTop="1px" borderColor="gray.200" my={2} />
@@ -330,6 +247,17 @@ export default function DashboardPage() {
               <FiCheckSquare style={{ marginRight: '12px' }} />
               Submissions
             </Button>
+            <Button 
+              variant="ghost" 
+              justifyContent="flex-start" 
+              onClick={() => router.push('/evaluations')}
+              borderRadius="lg"
+              py={6}
+              _hover={{ bg: 'gray.100' }}
+            >
+              <FiStar style={{ marginRight: '12px' }} />
+              Evaluations
+            </Button>
             <Box borderTop="1px" borderColor="gray.200" my={2} />
             <Button 
               variant="ghost" 
@@ -352,7 +280,7 @@ export default function DashboardPage() {
               {/* Welcome Header */}
               <Box>
                 <Text fontSize="sm" color="gray.500" mb={1}>
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  {currentDate}
                 </Text>
                 <Heading size="xl" mb={2} color="gray.800">Welcome back, {user?.firstName}! 👋</Heading>
                 <Text color="gray.600">Here's an overview of your workspace</Text>

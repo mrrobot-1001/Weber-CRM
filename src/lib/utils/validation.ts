@@ -30,7 +30,7 @@ export const createWorkAssignmentSchema = Joi.object({
   description: Joi.string().optional(),
   assignedTo: Joi.number().integer().required(),
   priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
-  dueDate: Joi.date().optional(),
+  dueDate: Joi.string().isoDate().optional().allow('', null),
 });
 
 export const updateWorkAssignmentSchema = Joi.object({
@@ -38,7 +38,7 @@ export const updateWorkAssignmentSchema = Joi.object({
   description: Joi.string().optional(),
   status: Joi.string().valid('pending', 'in_progress', 'completed', 'cancelled').optional(),
   priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
-  dueDate: Joi.date().optional(),
+  dueDate: Joi.string().isoDate().optional().allow('', null),
 });
 
 export const createSubmissionSchema = Joi.object({

@@ -10,14 +10,16 @@ import {
   VStack,
   HStack,
   Button,
+  Input,
   Textarea,
   Card,
   Grid,
   Flex,
   Avatar,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiUpload, FiStar, FiFileText, FiCheckCircle, FiTrash2, FiClock, FiUser } from 'react-icons/fi';
+import { FiArrowLeft, FiUpload, FiFileText, FiCheckCircle, FiTrash2, FiClock, FiUser, FiStar, FiSearch } from 'react-icons/fi';
 import { Logo } from '@/components/logo';
+import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -25,6 +27,8 @@ import { StatusBadge } from '@/components/ui/badges';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/common';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { wsService } from '@/services/websocket';
 
 const ROLE_NAME_TO_ID: Record<string, number> = {
   'CEO': 1,
@@ -37,14 +41,6 @@ const ROLE_NAME_TO_ID: Record<string, number> = {
   'ASSOCIATE': 5,
 };
 
-const RATING_OPTIONS = [
-  { label: '⭐⭐⭐⭐⭐ Excellent', value: '5' },
-  { label: '⭐⭐⭐⭐ Good', value: '4' },
-  { label: '⭐⭐⭐ Average', value: '3' },
-  { label: '⭐⭐ Needs Improvement', value: '2' },
-  { label: '⭐ Poor', value: '1' },
-];
-
 function SubmissionsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,22 +52,50 @@ function SubmissionsPageContent() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [evaluating, setEvaluating] = useState(false);
 
   const [submissionForm, setSubmissionForm] = useState({
     assignmentId: '',
     submissionNotes: '',
   });
 
-  const [evaluationForm, setEvaluationForm] = useState({
-    submissionId: '',
-    rating: '5',
-    comments: '',
-  });
+  // Sort and filter states
+  const [sortBy, setSortBy] = useState('submission_date');
+  const [sortOrder, setSortOrder] = useState('DESC');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // WebSocket connection
+  useWebSocket();
+
+  // Listen for real-time submission changes
+  useEffect(() => {
+    const handleSubmissionCreated = (data: any) => {
+      loadData();
+    };
+
+    const handleSubmissionUpdated = (data: any) => {
+      loadData();
+    };
+
+    const handleSubmissionDeleted = (data: any) => {
+      loadData();
+    };
+
+    wsService.on('submission_created', handleSubmissionCreated);
+    wsService.on('submission_updated', handleSubmissionUpdated);
+    wsService.on('submission_deleted', handleSubmissionDeleted);
+
+    return () => {
+      wsService.removeListener('submission_created', handleSubmissionCreated);
+      wsService.removeListener('submission_updated', handleSubmissionUpdated);
+      wsService.removeListener('submission_deleted', handleSubmissionDeleted);
+    };
   }, []);
 
   useEffect(() => {
@@ -94,6 +118,20 @@ function SubmissionsPageContent() {
     if (currentRoleId <= 2) return true;
     if (submission.submitted_by_username === currentUser.username) return true;
     return false;
+  };
+
+  const getRoleId = () => {
+    return currentUser?.roleId || ROLE_NAME_TO_ID[currentUser?.role] || 99;
+  };
+
+  const isManager = () => {
+    const roleId = getRoleId();
+    return [1, 2, 3, 4].includes(roleId);
+  };
+
+  const isCeoOrCoo = () => {
+    const roleId = getRoleId();
+    return [1, 2].includes(roleId);
   };
 
   const loadData = async () => {
@@ -125,11 +163,6 @@ function SubmissionsPageContent() {
     }
   };
 
-  const handleLogout = async () => {
-    await apiService.logout();
-    router.push('/login');
-  };
-
   const handleDelete = async () => {
     if (!deleteConfirm) return;
     setDeleting(true);
@@ -157,11 +190,23 @@ function SubmissionsPageContent() {
 
   const handleCreateSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!submissionForm.assignmentId || submissionForm.assignmentId === '') {
+      toaster.create({
+        title: 'Validation Error',
+        description: 'Please select an assignment',
+        type: 'error',
+        duration: 5000,
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await apiService.createSubmission({
         assignmentId: Number(submissionForm.assignmentId),
-        submissionNotes: submissionForm.submissionNotes,
+        submissionNotes: submissionForm.submissionNotes || null,
       });
       toaster.create({
         title: 'Work submitted!',
@@ -180,35 +225,6 @@ function SubmissionsPageContent() {
       });
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleCreateEvaluation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEvaluating(true);
-    try {
-      await apiService.createEvaluation({
-        submissionId: Number(evaluationForm.submissionId),
-        rating: Number(evaluationForm.rating),
-        comments: evaluationForm.comments,
-      });
-      toaster.create({
-        title: 'Evaluation submitted!',
-        description: 'Your evaluation has been recorded successfully',
-        type: 'success',
-        duration: 4000,
-      });
-      setEvaluationForm({ submissionId: '', rating: '5', comments: '' });
-      loadData();
-    } catch (err: any) {
-      toaster.create({
-        title: 'Evaluation failed',
-        description: err.response?.data?.message || 'Failed to submit evaluation',
-        type: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setEvaluating(false);
     }
   };
 
@@ -246,45 +262,16 @@ function SubmissionsPageContent() {
 
   return (
     <Box minH="100vh" bg="gray.50" key="submissions-page">
-      <Box bg="white" borderBottom="1px" borderColor="gray.200" px={{ base: 4, md: 6 }} py={4} position="sticky" top={0} zIndex={10} boxShadow="sm">
-        <Flex justify="space-between" align="center" maxW="container.xl" mx="auto">
-          <HStack gap={4}>
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} borderRadius="lg" _hover={{ bg: 'gray.100' }}>
-              <HStack gap={2}>
-                <FiArrowLeft />
-                <span>Back</span>
-              </HStack>
-            </Button>
-            <HStack gap={3} align="center">
-              <Box borderRadius="lg" overflow="hidden">
-                <Logo size="sm" />
-              </Box>
-              <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
-                <Heading size="md" color="gray.800">Submissions</Heading>
-                <Text fontSize="xs" color="gray.500">Track work</Text>
-              </VStack>
-            </HStack>
-          </HStack>
-          <HStack gap={4}>
-            <HStack gap={2} display={{ base: 'none', md: 'flex' }}>
-              <Avatar.Root size="sm">
-                <Avatar.Fallback bg="brand.500" color="white">
-                  {getInitials(currentUser?.username)}
-                </Avatar.Fallback>
-              </Avatar.Root>
-              <VStack gap={0} align="end">
-                <Text fontWeight="semibold" fontSize="sm">{currentUser?.firstName} {currentUser?.lastName}</Text>
-                <Text fontSize="xs" color="gray.500">{currentUser?.role}</Text>
-              </VStack>
-            </HStack>
-            <Button variant="ghost" size="sm" onClick={handleLogout} borderRadius="lg">Logout</Button>
-          </HStack>
-        </Flex>
-      </Box>
+      <Navbar 
+        title="Submissions" 
+        subtitle="Track work" 
+        user={currentUser} 
+        showBack={true} 
+      />
 
       <Container maxW="container.xl" py={8}>
         <VStack gap={6} align="stretch">
-          {canSubmitWork && (
+          {currentUser?.role !== 'CEO' && currentUser?.role !== 'COO' && (
             <Card.Root borderRadius="xl" boxShadow="sm">
               <Card.Header pb={2}>
                 <HStack gap={3}>
@@ -309,7 +296,7 @@ function SubmissionsPageContent() {
                   <Button mt={6} type="submit" bg="gray.900" color="white" size="md" borderRadius="md" loading={submitting} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
                     <HStack gap={2}>
                       <FiUpload size={16} />
-                      <span>Submit Work</span>
+                      <Text>Submit Work</Text>
                     </HStack>
                   </Button>
                 </form>
@@ -317,62 +304,71 @@ function SubmissionsPageContent() {
             </Card.Root>
           )}
 
-          {canEvaluate && (
-            <Card.Root borderRadius="xl" boxShadow="sm">
-              <Card.Header pb={2}>
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="purple.100" color="purple.600"><FiStar size={20} /></Box>
-                  <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.800">Evaluate Submission</Heading>
-                    <Text fontSize="sm" color="gray.500">Review and rate team member submissions</Text>
-                  </VStack>
-                </HStack>
-              </Card.Header>
-              <Card.Body pt={4}>
-                <form onSubmit={handleCreateEvaluation}>
-                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
-                    <Box>
-                      <Select label="Submission" value={evaluationForm.submissionId} onChange={(value) => setEvaluationForm({ ...evaluationForm, submissionId: value })} options={submissionOptions} placeholder="Select submission to evaluate" required />
-                    </Box>
-                    <Box>
-                      <Select label="Rating" value={evaluationForm.rating} onChange={(value) => setEvaluationForm({ ...evaluationForm, rating: value })} options={RATING_OPTIONS} />
-                    </Box>
-                    <Box gridColumn={{ base: 'auto', md: '1 / -1' }}>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">Comments</Text>
-                      <Textarea value={evaluationForm.comments} onChange={(e) => setEvaluationForm({ ...evaluationForm, comments: e.target.value })} placeholder="Provide feedback on this submission..." borderRadius="lg" rows={3} />
-                    </Box>
-                  </Grid>
-                  <Button mt={6} type="submit" bg="gray.900" color="white" size="md" borderRadius="md" loading={evaluating} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
-                    <HStack gap={2}>
-                      <FiStar size={16} />
-                      <span>Submit Evaluation</span>
-                    </HStack>
-                  </Button>
-                </form>
-              </Card.Body>
-            </Card.Root>
-          )}
+          {/* Evaluation section moved to /evaluations page */}
 
           <Card.Root borderRadius="xl" boxShadow="sm">
-            <Card.Header pb={2}>
-              <HStack justify="space-between">
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="blue.100" color="blue.600"><FiFileText size={20} /></Box>
-                  <VStack align="start" gap={0}>
-                    <Heading size="md">Recent Submissions</Heading>
-                    <Text fontSize="sm" color="gray.500">{submissions.length} total submissions</Text>
-                  </VStack>
+            <Card.Header pb={4}>
+              <VStack align="stretch" gap={4}>
+                <HStack justify="space-between">
+                  <HStack gap={3}>
+                    <Box p={2} borderRadius="lg" bg="blue.100" color="blue.600"><FiFileText size={20} /></Box>
+                    <VStack align="start" gap={0}>
+                      <Heading size="md">Recent Submissions</Heading>
+                      <Text fontSize="sm" color="gray.500">{submissions.filter(s => {
+                        if (searchTerm && !s.assignment_title.toLowerCase().includes(searchTerm.toLowerCase()) && !s.submitted_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                        if (filterStatus && s.status !== filterStatus) return false;
+                        return true;
+                      }).length} submissions</Text>
+                    </VStack>
+                  </HStack>
                 </HStack>
-              </HStack>
+
+                {/* Search and Filter */}
+                <VStack align="stretch" gap={3} pb={3} borderBottom="1px" borderColor="gray.200">
+                  <HStack gap={2}>
+                    <Box flex={1}>
+                      <HStack>
+                        <FiSearch size={18} color="gray.400" />
+                        <Input
+                          placeholder="Search by title or user..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          borderRadius="lg"
+                          size="sm"
+                        />
+                      </HStack>
+                    </Box>
+                    <Select
+                      label=""
+                      value={filterStatus}
+                      onChange={(value) => setFilterStatus(value)}
+                      options={[
+                        { label: 'All', value: '' },
+                        { label: 'Submitted', value: 'submitted' },
+                        { label: 'Evaluated', value: 'evaluated' },
+                        { label: 'Completed', value: 'completed' },
+                      ]}
+                    />
+                  </HStack>
+                </VStack>
+              </VStack>
             </Card.Header>
             <Card.Body pt={4}>
               {loading ? (
                 <ListSkeleton count={3} />
-              ) : submissions.length === 0 ? (
+              ) : submissions.filter(s => {
+                if (searchTerm && !s.assignment_title.toLowerCase().includes(searchTerm.toLowerCase()) && !s.submitted_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                if (filterStatus && s.status !== filterStatus) return false;
+                return true;
+              }).length === 0 ? (
                 <EmptyState icon={<FiFileText size={40} />} title="No submissions yet" description="Submissions will appear here once work is submitted" />
               ) : (
                 <VStack gap={3} align="stretch">
-                  {submissions.map((submission) => (
+                  {submissions.filter(s => {
+                    if (searchTerm && !s.assignment_title.toLowerCase().includes(searchTerm.toLowerCase()) && !s.submitted_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                    if (filterStatus && s.status !== filterStatus) return false;
+                    return true;
+                  }).map((submission) => (
                     <Box key={submission.id} p={4} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
                       <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
                         <HStack gap={4} flex={1}>
@@ -394,14 +390,14 @@ function SubmissionsPageContent() {
                           <StatusBadge status={submission.status} />
                           <HStack gap={1} fontSize="sm" color="gray.500">
                             <FiClock size={14} />
-                            <Text>{formatDate(submission.submission_date)}</Text>
+                            <Text suppressHydrationWarning>{formatDate(submission.submission_date)}</Text>
                           </HStack>
                           {canDeleteSubmissionFn(submission) && (
                             <Button size="sm" colorScheme="red" variant="outline" borderRadius="lg"
                               onClick={() => setDeleteConfirm({ id: submission.id, title: submission.assignment_title })} _hover={{ bg: 'red.50' }}>
                               <HStack gap={1}>
                                 <FiTrash2 size={14} />
-                                <span>Delete</span>
+                                <Text>Delete</Text>
                               </HStack>
                             </Button>
                           )}
@@ -452,7 +448,7 @@ function SubmissionsPageContent() {
                         <VStack align="end" gap={1}>
                           <HStack gap={1} fontSize="sm" color="gray.500">
                             <FiClock size={14} />
-                            <Text>{formatDate(evaluation.evaluation_date)}</Text>
+                            <Text suppressHydrationWarning>{formatDate(evaluation.evaluation_date)}</Text>
                           </HStack>
                         </VStack>
                       </HStack>

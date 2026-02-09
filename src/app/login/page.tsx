@@ -403,7 +403,7 @@ export default function LoginPage() {
                       ) : (
                         <FiLogIn size={18} />
                       )}
-                      <span>{loading ? 'Signing in...' : 'Sign In'}</span>
+                      <Text>{loading ? 'Signing in...' : 'Sign In'}</Text>
                     </HStack>
                   </Button>
                 </VStack>

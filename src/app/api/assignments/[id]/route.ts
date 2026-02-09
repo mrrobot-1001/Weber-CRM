@@ -40,6 +40,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let client: any = null;
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -53,13 +54,13 @@ export async function DELETE(
     const { id } = await params;
     const assignmentId = parseInt(id, 10);
 
-    if (isNaN(assignmentId)) {
+    if (isNaN(assignmentId) || assignmentId <= 0) {
       return errorResponse('Invalid assignment ID', 400);
     }
 
     // Get the assignment to check ownership/permissions
     const assignment = await query(
-      'SELECT assigned_by, assigned_to FROM work_assignments WHERE id = $1',
+      'SELECT id, assigned_by, assigned_to, title, status FROM work_assignments WHERE id = $1',
       [assignmentId]
     );
 
@@ -67,7 +68,7 @@ export async function DELETE(
       return errorResponse('Assignment not found', 404);
     }
 
-    const { assigned_by, assigned_to } = assignment.rows[0];
+    const { assigned_by, assigned_to, title, status } = assignment.rows[0];
 
     // Permission check:
     // - CEO/COO can delete any assignment
@@ -80,19 +81,36 @@ export async function DELETE(
       return errorResponse('You can only delete assignments you created or are assigned to', 403);
     }
 
-    // Perform delete
+    // Check if assignment has active submissions (not deleted)
+    const submissions = await query(
+      'SELECT COUNT(*) as count FROM work_submissions WHERE assignment_id = $1',
+      [assignmentId]
+    );
+
+    const submissionCount = parseInt(submissions.rows[0].count);
+    if (submissionCount > 0 && status !== 'pending') {
+      return errorResponse(
+        `Cannot delete assignment with ${submissionCount} active submission(s). Cancel or archive submissions first.`,
+        400
+      );
+    }
+
+    // Delete cascades to submissions and evaluations automatically via FK constraints
     const result = await query(
-      'DELETE FROM work_assignments WHERE id = $1 RETURNING id',
+      'DELETE FROM work_assignments WHERE id = $1 RETURNING id, title',
       [assignmentId]
     );
 
     if (result.rows.length === 0) {
-      return errorResponse('Assignment not found', 404);
+      return errorResponse('Assignment not found or already deleted', 404);
     }
 
-    logger.info(`Assignment ${assignmentId} deleted by ${user.username}`);
+    logger.info(`Assignment ${assignmentId} ("${title}") deleted by user ${user.userId} (${user.username})`);
 
-    return jsonResponse(true, 'Assignment deleted successfully');
+    return jsonResponse(true, 'Assignment deleted successfully', {
+      id: result.rows[0].id,
+      title: result.rows[0].title,
+    });
   } catch (error: any) {
     logger.error('Error deleting assignment:', error);
     return errorResponse('Error deleting assignment', 500, error);

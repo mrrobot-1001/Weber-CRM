@@ -124,7 +124,7 @@ export function ConfirmModal({
               >
                 <HStack gap={2}>
                   <IconComponent size={16} />
-                  <span>{confirmText}</span>
+                  <Text>{confirmText}</Text>
                 </HStack>
               </Button>
             </HStack>
