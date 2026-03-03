@@ -4,6 +4,9 @@ import { query } from '@/lib/db/pool';
 import { validateBody, createUserSchema } from '@/lib/utils/validation';
 import { canManageUsers, ROLES } from '@/lib/server/permissions';
 import logger from '@/lib/db/logger';
+import bcryptjs from 'bcryptjs';
+
+export const dynamic = 'force-dynamic';
 
 // Check if a user with a given roleId can create users with the target roleId
 function canCreateRole(creatorRoleId: number, targetRoleId: number): boolean {
@@ -85,7 +88,6 @@ export async function POST(req: NextRequest) {
 
     // Generate a temporary password for new user
     const tempPassword = `${username}_temp_2026`;
-    const bcryptjs = require('bcryptjs');
     const hashedPassword = await bcryptjs.hash(tempPassword, 10);
 
     const result = await query(

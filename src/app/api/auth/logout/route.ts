@@ -3,6 +3,8 @@ import { getAuthenticatedUser, jsonResponse, errorResponse } from '@/lib/server/
 import { closeSession, logAuditTrail } from '@/lib/services/sessionService';
 import logger from '@/lib/db/logger';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthenticatedUser(req);
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest) {
       const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
       const userAgent = req.headers.get('user-agent') || 'unknown';
 
-      logAuditTrail(
+      await logAuditTrail(
         user.userId,
         'LOGOUT',
         'user',
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
         {},
         ipAddress,
         userAgent
-      ).catch(err => console.error(err));
+      ).catch(() => {});
 
       logger.info(`User ${user.username} logged out`);
     }

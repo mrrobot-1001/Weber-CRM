@@ -5,6 +5,8 @@ import { validateBody, createSubmissionSchema } from '@/lib/utils/validation';
 import { logAuditTrail } from '@/lib/services/sessionService';
 import logger from '@/lib/db/logger';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getAuthenticatedUser(req);
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
     const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
 
-    logAuditTrail(
+    await logAuditTrail(
       user.userId,
       'SUBMISSION_CREATED',
       'work_submission',
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
       { assignmentId },
       ipAddress,
       userAgent
-    ).catch(err => console.error(err));
+    ).catch(() => {});
 
     logger.info(`Work submission created by ${user.username}`);
 

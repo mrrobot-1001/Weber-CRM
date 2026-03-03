@@ -5,6 +5,8 @@ import { createSession, logAuditTrail } from '@/lib/services/sessionService';
 import { jsonResponse, errorResponse } from '@/lib/server/api-utils';
 import logger from '@/lib/db/logger';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -35,9 +37,8 @@ export async function POST(req: NextRequest) {
       userAgent
     );
 
-    // Log audit trail
-    // We do not wait for this
-    logAuditTrail(
+    // Log audit trail — must await on Vercel serverless or it may be killed
+    await logAuditTrail(
       user.id,
       'LOGIN',
       'user',
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
       { username },
       ipAddress,
       userAgent
-    ).catch(err => console.error('Audit log failed', err));
+    ).catch(() => {});
 
     logger.info(`User ${user.username} logged in successfully`);
 

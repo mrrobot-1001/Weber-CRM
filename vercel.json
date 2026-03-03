@@ -1,17 +1,26 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@next_public_api_url"
-  },
+  "framework": "nextjs",
+  "regions": ["iad1"],
   "functions": {
-    "src/app/**": {
-      "maxDuration": 30
+    "src/app/api/**/*.ts": {
+      "maxDuration": 15
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    },
+    {
+      "source": "/((?!api).*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400"
+        }
+      ]
+    }
+  ]
 }

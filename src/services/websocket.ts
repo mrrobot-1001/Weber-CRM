@@ -15,18 +15,37 @@ class WebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
   private url: string;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 3;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private isManualClose = false;
+  private _enabled = true;
 
   constructor() {
     super();
     this.url = typeof window !== 'undefined'
       ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
       : 'ws://localhost:3000';
+
+    // On Vercel (serverless), WebSocket support requires a separate WS server.
+    // If NEXT_PUBLIC_WS_URL is set, use it; otherwise attempt the same origin
+    // but gracefully degrade if it fails.
+    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_WS_URL) {
+      this.url = process.env.NEXT_PUBLIC_WS_URL;
+    }
+  }
+
+  /** Disable WebSocket entirely (e.g., when no WS server is available) */
+  disable(): void {
+    this._enabled = false;
+    this.disconnect();
   }
 
   connect(token: string): Promise<void> {
+    // If disabled or no WebSocket support, resolve silently
+    if (!this._enabled || typeof WebSocket === 'undefined') {
+      return Promise.resolve();
+    }
+
     // Prevent duplicate connections
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       return Promise.resolve();
@@ -68,11 +87,13 @@ class WebSocketService extends EventEmitter {
           
           if (!this.isManualClose && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            // Exponential backoff: 2s, 4s, 8s, 16s, 32s
-            const delay = Math.min(2000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
+            const delay = Math.min(2000 * Math.pow(2, this.reconnectAttempts - 1), 15000);
             this.reconnectTimer = setTimeout(() => {
               this.connect(token).catch(() => {});
             }, delay);
+          } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            // Stop trying — likely no WS server available (e.g. Vercel serverless)
+            this._enabled = false;
           }
         };
       } catch {
