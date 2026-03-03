@@ -8,7 +8,7 @@ export function useAppToast() {
       title,
       description,
       type: 'success',
-      duration: 4000,
+      duration: 3000,
     });
   };
 
@@ -17,7 +17,7 @@ export function useAppToast() {
       title,
       description,
       type: 'error',
-      duration: 5000,
+      duration: 4000,
     });
   };
 
@@ -26,7 +26,7 @@ export function useAppToast() {
       title,
       description,
       type: 'info',
-      duration: 4000,
+      duration: 3000,
     });
   };
 
@@ -35,7 +35,7 @@ export function useAppToast() {
       title,
       description,
       type: 'warning',
-      duration: 4000,
+      duration: 3500,
     });
   };
 

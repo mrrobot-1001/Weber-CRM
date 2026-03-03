@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -17,8 +17,7 @@ import {
   Flex,
   Avatar,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiUpload, FiFileText, FiCheckCircle, FiTrash2, FiClock, FiUser, FiStar, FiSearch } from 'react-icons/fi';
-import { Logo } from '@/components/logo';
+import { FiUpload, FiFileText, FiTrash2, FiClock, FiUser, FiSearch } from 'react-icons/fi';
 import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
@@ -27,18 +26,11 @@ import { StatusBadge } from '@/components/ui/badges';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/common';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { wsService } from '@/services/websocket';
+import { useWebSocket, useWebSocketEvent } from '@/hooks/useWebSocket';
 
-const ROLE_NAME_TO_ID: Record<string, number> = {
-  'CEO': 1,
-  'COO': 2,
-  'Departmental Head': 3,
-  'DEPT_HEAD': 3,
-  'Senior Associate': 4,
-  'SENIOR': 4,
-  'Associate': 5,
-  'ASSOCIATE': 5,
+const ROLE_ID_MAP: Record<string, number> = {
+  'CEO': 1, 'COO': 2, 'Departmental Head': 3, 'DEPT_HEAD': 3,
+  'Senior Associate': 4, 'SENIOR': 4, 'Associate': 5, 'ASSOCIATE': 5,
 };
 
 function SubmissionsPageContent() {
@@ -47,7 +39,6 @@ function SubmissionsPageContent() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
-  const [evaluations, setEvaluations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -59,8 +50,6 @@ function SubmissionsPageContent() {
   });
 
   // Sort and filter states
-  const [sortBy, setSortBy] = useState('submission_date');
-  const [sortOrder, setSortOrder] = useState('DESC');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -70,33 +59,39 @@ function SubmissionsPageContent() {
     setMounted(true);
   }, []);
 
-  // WebSocket connection
+  // WebSocket connection & real-time updates
   useWebSocket();
 
-  // Listen for real-time submission changes
-  useEffect(() => {
-    const handleSubmissionCreated = (data: any) => {
-      loadData();
-    };
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [assignmentsRes, submissionsRes] = await Promise.all([
+        apiService.getAssignments().catch(() => ({ data: [] })),
+        apiService.getSubmissions().catch(() => ({ data: [] })),
+      ]);
+      setAssignments(assignmentsRes.data || []);
+      setSubmissions(submissionsRes.data || []);
+      
+      // Pre-select assignment from URL parameter
+      const assignmentIdParam = searchParams.get('assignmentId');
+      if (assignmentIdParam && !submissionForm.assignmentId) {
+        setSubmissionForm(prev => ({ ...prev, assignmentId: assignmentIdParam }));
+      }
+    } catch (err: any) {
+      toaster.create({
+        title: 'Error loading data',
+        description: err.response?.data?.message || 'Failed to load submissions',
+        type: 'error',
+        duration: 4000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams, submissionForm.assignmentId]);
 
-    const handleSubmissionUpdated = (data: any) => {
-      loadData();
-    };
-
-    const handleSubmissionDeleted = (data: any) => {
-      loadData();
-    };
-
-    wsService.on('submission_created', handleSubmissionCreated);
-    wsService.on('submission_updated', handleSubmissionUpdated);
-    wsService.on('submission_deleted', handleSubmissionDeleted);
-
-    return () => {
-      wsService.removeListener('submission_created', handleSubmissionCreated);
-      wsService.removeListener('submission_updated', handleSubmissionUpdated);
-      wsService.removeListener('submission_deleted', handleSubmissionDeleted);
-    };
-  }, []);
+  useWebSocketEvent('submission_created', loadData);
+  useWebSocketEvent('submission_updated', loadData);
+  useWebSocketEvent('submission_deleted', loadData);
 
   useEffect(() => {
     if (!mounted) return;
@@ -110,57 +105,13 @@ function SubmissionsPageContent() {
       setCurrentUser(JSON.parse(userStr));
     }
     loadData();
-  }, [router, mounted]);
+  }, [router, mounted, loadData]);
 
   const canDeleteSubmissionFn = (submission: any) => {
     if (!currentUser) return false;
-    const currentRoleId = currentUser.roleId || ROLE_NAME_TO_ID[currentUser.role] || 99;
-    if (currentRoleId <= 2) return true;
-    if (submission.submitted_by_username === currentUser.username) return true;
-    return false;
-  };
-
-  const getRoleId = () => {
-    return currentUser?.roleId || ROLE_NAME_TO_ID[currentUser?.role] || 99;
-  };
-
-  const isManager = () => {
-    const roleId = getRoleId();
-    return [1, 2, 3, 4].includes(roleId);
-  };
-
-  const isCeoOrCoo = () => {
-    const roleId = getRoleId();
-    return [1, 2].includes(roleId);
-  };
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [assignmentsRes, submissionsRes, evaluationsRes] = await Promise.all([
-        apiService.getAssignments().catch(() => ({ data: [] })),
-        apiService.getSubmissions().catch(() => ({ data: [] })),
-        apiService.getEvaluations().catch(() => ({ data: [] })),
-      ]);
-      setAssignments(assignmentsRes.data || []);
-      setSubmissions(submissionsRes.data || []);
-      setEvaluations(evaluationsRes.data || []);
-      
-      // Pre-select assignment from URL parameter
-      const assignmentIdParam = searchParams.get('assignmentId');
-      if (assignmentIdParam && !submissionForm.assignmentId) {
-        setSubmissionForm(prev => ({ ...prev, assignmentId: assignmentIdParam }));
-      }
-    } catch (err: any) {
-      toaster.create({
-        title: 'Error loading data',
-        description: err.response?.data?.message || 'Failed to load submissions',
-        type: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setLoading(false);
-    }
+    const rid = currentUser.roleId || ROLE_ID_MAP[currentUser.role] || 99;
+    if (rid <= 2) return true;
+    return submission.submitted_by_username === currentUser.username;
   };
 
   const handleDelete = async () => {
@@ -230,7 +181,6 @@ function SubmissionsPageContent() {
 
   // Everyone can submit work for assignments assigned to them
   const canSubmitWork = true;
-  const canEvaluate = ['CEO', 'COO', 'Departmental_Head', 'Senior_Associate', 'Departmental Head', 'Senior Associate', 'DEPT_HEAD', 'SENIOR'].includes(currentUser?.role || '') || [1, 2, 3, 4].includes(currentUser?.roleId);
 
   const getInitials = (username?: string) => {
     if (!username) return '?';
@@ -248,17 +198,19 @@ function SubmissionsPageContent() {
     a.status !== 'completed'
   );
   const assignmentOptions = myPendingAssignments.map(a => ({ label: a.title, value: String(a.id) }));
-  const submissionOptions = submissions.map(s => ({ label: `${s.assignment_title} • ${s.submitted_by_username}`, value: String(s.id) }));
 
-  const getRatingStars = (rating: number) => {
-    return '⭐'.repeat(rating);
-  };
-
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4) return 'green';
-    if (rating >= 3) return 'yellow';
-    return 'red';
-  };
+  // Memoize filtered submissions — single source of truth
+  const filteredSubmissions = useMemo(() => {
+    return submissions.filter(s => {
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        if (!s.assignment_title?.toLowerCase().includes(term) &&
+            !s.submitted_by_username?.toLowerCase().includes(term)) return false;
+      }
+      if (filterStatus && s.status !== filterStatus) return false;
+      return true;
+    });
+  }, [submissions, searchTerm, filterStatus]);
 
   return (
     <Box minH="100vh" bg="gray.50" key="submissions-page">
@@ -314,11 +266,7 @@ function SubmissionsPageContent() {
                     <Box p={2} borderRadius="lg" bg="blue.100" color="blue.600"><FiFileText size={20} /></Box>
                     <VStack align="start" gap={0}>
                       <Heading size="md">Recent Submissions</Heading>
-                      <Text fontSize="sm" color="gray.500">{submissions.filter(s => {
-                        if (searchTerm && !s.assignment_title.toLowerCase().includes(searchTerm.toLowerCase()) && !s.submitted_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-                        if (filterStatus && s.status !== filterStatus) return false;
-                        return true;
-                      }).length} submissions</Text>
+                      <Text fontSize="sm" color="gray.500">{filteredSubmissions.length} submissions</Text>
                     </VStack>
                   </HStack>
                 </HStack>
@@ -356,19 +304,11 @@ function SubmissionsPageContent() {
             <Card.Body pt={4}>
               {loading ? (
                 <ListSkeleton count={3} />
-              ) : submissions.filter(s => {
-                if (searchTerm && !s.assignment_title.toLowerCase().includes(searchTerm.toLowerCase()) && !s.submitted_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-                if (filterStatus && s.status !== filterStatus) return false;
-                return true;
-              }).length === 0 ? (
+              ) : filteredSubmissions.length === 0 ? (
                 <EmptyState icon={<FiFileText size={40} />} title="No submissions yet" description="Submissions will appear here once work is submitted" />
               ) : (
                 <VStack gap={3} align="stretch">
-                  {submissions.filter(s => {
-                    if (searchTerm && !s.assignment_title.toLowerCase().includes(searchTerm.toLowerCase()) && !s.submitted_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-                    if (filterStatus && s.status !== filterStatus) return false;
-                    return true;
-                  }).map((submission) => (
+                  {filteredSubmissions.map((submission) => (
                     <Box key={submission.id} p={4} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
                       <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
                         <HStack gap={4} flex={1}>
@@ -401,55 +341,6 @@ function SubmissionsPageContent() {
                               </HStack>
                             </Button>
                           )}
-                        </VStack>
-                      </HStack>
-                    </Box>
-                  ))}
-                </VStack>
-              )}
-            </Card.Body>
-          </Card.Root>
-
-          <Card.Root borderRadius="xl" boxShadow="sm">
-            <Card.Header pb={2}>
-              <HStack justify="space-between">
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="yellow.100" color="yellow.600"><FiCheckCircle size={20} /></Box>
-                  <VStack align="start" gap={0}>
-                    <Heading size="md">Evaluations</Heading>
-                    <Text fontSize="sm" color="gray.500">{evaluations.length} total evaluations</Text>
-                  </VStack>
-                </HStack>
-              </HStack>
-            </Card.Header>
-            <Card.Body pt={4}>
-              {loading ? (
-                <ListSkeleton count={3} />
-              ) : evaluations.length === 0 ? (
-                <EmptyState icon={<FiStar size={40} />} title="No evaluations yet" description="Evaluations will appear here once submissions are reviewed" />
-              ) : (
-                <VStack gap={3} align="stretch">
-                  {evaluations.map((evaluation) => (
-                    <Box key={evaluation.id} p={4} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
-                      <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
-                        <Box flex={1}>
-                          <HStack mb={2}>
-                            <Text fontWeight="bold" fontSize="md">{evaluation.assignment_title}</Text>
-                            <Box px={2} py={1} borderRadius="full" bg={`${getRatingColor(evaluation.rating)}.100`} color={`${getRatingColor(evaluation.rating)}.700`} fontSize="sm" fontWeight="semibold">
-                              {getRatingStars(evaluation.rating)} {evaluation.rating}/5
-                            </Box>
-                          </HStack>
-                          <HStack gap={2} fontSize="sm" color="gray.500" mb={2}>
-                            <FiUser size={14} />
-                            <Text>Evaluated by {evaluation.evaluated_by_username}</Text>
-                          </HStack>
-                          <Text fontSize="sm" color="gray.600">{evaluation.comments || 'No comments provided'}</Text>
-                        </Box>
-                        <VStack align="end" gap={1}>
-                          <HStack gap={1} fontSize="sm" color="gray.500">
-                            <FiClock size={14} />
-                            <Text suppressHydrationWarning>{formatDate(evaluation.evaluation_date)}</Text>
-                          </HStack>
                         </VStack>
                       </HStack>
                     </Box>

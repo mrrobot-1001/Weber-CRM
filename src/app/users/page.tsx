@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -13,11 +13,9 @@ import {
   Input,
   Card,
   Grid,
-  Flex,
   Avatar,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiPlus, FiTrash2, FiUser, FiMail, FiCopy, FiCheck } from 'react-icons/fi';
-import { Logo } from '@/components/logo';
+import { FiPlus, FiTrash2, FiUser, FiMail, FiCopy, FiCheck } from 'react-icons/fi';
 import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
@@ -35,15 +33,10 @@ const ALL_ROLE_OPTIONS = [
   { label: 'Associate', id: 5 },
 ];
 
-const ROLE_NAME_TO_ID: Record<string, number> = {
-  'CEO': 1,
-  'COO': 2,
-  'Departmental Head': 3,
-  'DEPT_HEAD': 3,
-  'Senior Associate': 4,
-  'SENIOR': 4,
-  'Associate': 5,
-  'ASSOCIATE': 5,
+const ROLE_ID_MAP: Record<string, number> = {
+  CEO: 1, COO: 2, Departmental_Head: 3, DEPT_HEAD: 3,
+  'Departmental Head': 3, Senior_Associate: 4, SENIOR: 4,
+  'Senior Associate': 4, Associate: 5, ASSOCIATE: 5,
 };
 
 export default function UsersPage() {
@@ -102,8 +95,8 @@ export default function UsersPage() {
 
   const canDeleteUserFn = (targetUser: any) => {
     if (!currentUser) return false;
-    const currentRoleId = currentUser.roleId || ROLE_NAME_TO_ID[currentUser.role] || 99;
-    const targetRoleId = targetUser.role_id || ROLE_NAME_TO_ID[targetUser.role] || 99;
+    const currentRoleId = currentUser.roleId || ROLE_ID_MAP[currentUser.role] || 99;
+    const targetRoleId = targetUser.role_id || ROLE_ID_MAP[targetUser.role] || 99;
     if (currentRoleId > 2) return false;
     if (targetUser.id === currentUser.id) return false;
     if (currentRoleId === 1) return targetRoleId !== 1;
@@ -111,7 +104,7 @@ export default function UsersPage() {
     return false;
   };
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiService.getUsers();
@@ -121,12 +114,12 @@ export default function UsersPage() {
         title: 'Error loading users',
         description: err.response?.data?.message || err.message || 'Failed to load users',
         type: 'error',
-        duration: 5000,
+        duration: 4000,
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleDeleteUser = async () => {
     if (!deleteConfirm) return;
@@ -137,7 +130,7 @@ export default function UsersPage() {
         title: 'User deleted',
         description: `User "${deleteConfirm.name}" has been deleted successfully`,
         type: 'success',
-        duration: 4000,
+        duration: 3000,
       });
       setDeleteConfirm(null);
       loadUsers();
@@ -146,7 +139,7 @@ export default function UsersPage() {
         title: 'Delete failed',
         description: err.response?.data?.message || 'Failed to delete user',
         type: 'error',
-        duration: 5000,
+        duration: 4000,
       });
     } finally {
       setDeleting(false);
@@ -185,7 +178,7 @@ export default function UsersPage() {
         title: 'User created!',
         description: `${form.firstName} ${form.lastName} has been added successfully`,
         type: 'success',
-        duration: 4000,
+        duration: 3000,
       });
       setTempPassword(response.data?.tempPassword || '');
       setForm({ email: '', username: '', firstName: '', lastName: '', roleId: '5', departmentId: '', managerId: '' });
@@ -195,18 +188,18 @@ export default function UsersPage() {
         title: 'Failed to create user',
         description: err.response?.data?.message || 'An error occurred',
         type: 'error',
-        duration: 5000,
+        duration: 4000,
       });
     } finally {
       setCreating(false);
     }
   };
 
-  const canManageUsers = currentUser?.role === 'CEO' || currentUser?.role === 'COO' || 
-                         currentUser?.role === 'Departmental Head' || currentUser?.role === 'DEPT_HEAD' ||
-                         [1, 2, 3].includes(currentUser?.roleId);
+  const canManageUsers = (currentUser?.roleId || ROLE_ID_MAP[currentUser?.role] || 99) <= 3;
 
   const roleOptions = availableRoleOptions.map(r => ({ label: r.label, value: String(r.id) }));
+
+  const activeUsers = useMemo(() => users.filter(u => u.status !== 'deleted'), [users]);
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -319,7 +312,7 @@ export default function UsersPage() {
                   <Box p={2} borderRadius="lg" bg="gray.100" color="gray.600"><FiUser size={20} /></Box>
                   <VStack align="start" gap={0}>
                     <Heading size="md">All Users</Heading>
-                    <Text fontSize="sm" color="gray.500">{users.filter(u => u.status !== 'deleted').length} active users</Text>
+                    <Text fontSize="sm" color="gray.500">{activeUsers.length} active users</Text>
                   </VStack>
                 </HStack>
               </HStack>
@@ -327,11 +320,11 @@ export default function UsersPage() {
             <Card.Body pt={4}>
               {loading ? (
                 <ListSkeleton count={4} />
-              ) : users.filter(u => u.status !== 'deleted').length === 0 ? (
+              ) : activeUsers.length === 0 ? (
                 <EmptyState icon={<FiUser size={40} />} title="No users found" description="Create your first user to get started" />
               ) : (
                 <VStack gap={3} align="stretch">
-                  {users.filter(u => u.status !== 'deleted').map((u) => (
+                  {activeUsers.map((u) => (
                     <Box key={u.id} p={4} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
                       <HStack justify="space-between" align="center" flexWrap="wrap" gap={4}>
                         <HStack gap={4}>

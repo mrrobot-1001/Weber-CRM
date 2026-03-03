@@ -5,33 +5,43 @@ type WSEventType = 'assignment_created' | 'assignment_updated' | 'assignment_del
                    'evaluation_created' | 'evaluation_updated' | 'evaluation_deleted' |
                    'connected' | 'disconnected' | 'error';
 
+const VALID_EVENTS = new Set<string>([
+  'assignment_created', 'assignment_updated', 'assignment_deleted',
+  'submission_created', 'submission_updated', 'submission_deleted',
+  'evaluation_created', 'evaluation_updated', 'evaluation_deleted',
+]);
+
 class WebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
   private url: string;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  private reconnectInterval = 3000;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private isManualClose = false;
 
   constructor() {
     super();
-    this.url = `${typeof window !== 'undefined' ? window.location.protocol === 'https:' ? 'wss:' : 'ws:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost:3000'}`;
+    this.url = typeof window !== 'undefined'
+      ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
+      : 'ws://localhost:3000';
   }
 
   connect(token: string): Promise<void> {
+    // Prevent duplicate connections
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
       try {
+        this.isManualClose = false;
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          console.log('WebSocket connected');
           this.reconnectAttempts = 0;
-          
-          // Send authentication
           if (this.ws) {
             this.ws.send(JSON.stringify({ type: 'auth', token }));
           }
-          
           this.emit('connected');
           resolve();
         };
@@ -39,42 +49,34 @@ class WebSocketService extends EventEmitter {
         this.ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            console.log('WebSocket message received:', data);
-            
-            if (data.type && ['assignment_created', 'assignment_updated', 'assignment_deleted',
-                             'submission_created', 'submission_updated', 'submission_deleted',
-                             'evaluation_created', 'evaluation_updated', 'evaluation_deleted'].includes(data.type)) {
+            if (data.type && VALID_EVENTS.has(data.type)) {
               this.emit(data.type as WSEventType, data.payload);
             }
-          } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+          } catch {
+            // Silently ignore malformed messages
           }
         };
 
-        this.ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          this.emit('error', error);
-          reject(error);
+        this.ws.onerror = () => {
+          this.emit('error', new Error('WebSocket error'));
+          reject(new Error('WebSocket connection error'));
         };
 
         this.ws.onclose = () => {
-          console.log('WebSocket disconnected');
           this.ws = null;
           this.emit('disconnected');
           
           if (!this.isManualClose && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(`Reconnecting... attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-            setTimeout(() => {
-              this.connect(token).catch(() => {
-                // Connection failed, will retry on next interval
-              });
-            }, this.reconnectInterval * this.reconnectAttempts);
+            // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+            const delay = Math.min(2000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
+            this.reconnectTimer = setTimeout(() => {
+              this.connect(token).catch(() => {});
+            }, delay);
           }
         };
-      } catch (error) {
-        console.error('WebSocket connection error:', error);
-        reject(error);
+      } catch {
+        reject(new Error('WebSocket connection failed'));
       }
     });
   }
@@ -89,10 +91,15 @@ class WebSocketService extends EventEmitter {
 
   disconnect(): void {
     this.isManualClose = true;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    this.reconnectAttempts = 0;
   }
 
   isConnected(): boolean {

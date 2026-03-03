@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -18,7 +18,6 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { FiPlus, FiTrash2, FiClipboard, FiCalendar, FiUser, FiAlertCircle, FiCheckSquare, FiSearch } from 'react-icons/fi';
-import { Logo } from '@/components/logo';
 import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
@@ -27,8 +26,7 @@ import { StatusBadge, PriorityBadge } from '@/components/ui/badges';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/common';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { wsService } from '@/services/websocket';
+import { useWebSocket, useWebSocketEvent } from '@/hooks/useWebSocket';
 
 const PRIORITY_OPTIONS = [
   { label: 'Low', value: 'low' },
@@ -37,16 +35,16 @@ const PRIORITY_OPTIONS = [
   { label: 'Urgent', value: 'urgent' },
 ];
 
-const ROLE_NAME_TO_ID: Record<string, number> = {
-  'CEO': 1,
-  'COO': 2,
-  'Departmental Head': 3,
-  'DEPT_HEAD': 3,
-  'Senior Associate': 4,
-  'SENIOR': 4,
-  'Associate': 5,
-  'ASSOCIATE': 5,
+const ROLE_ID_MAP: Record<string, number> = {
+  'CEO': 1, 'COO': 2, 'Departmental_Head': 3, 'Departmental Head': 3, 'DEPT_HEAD': 3,
+  'Senior_Associate': 4, 'Senior Associate': 4, 'SENIOR': 4,
+  'Associate': 5, 'ASSOCIATE': 5,
 };
+
+function getRoleId(user: any): number {
+  if (!user) return 99;
+  return user.roleId || ROLE_ID_MAP[user.role] || 99;
+}
 
 export default function AssignmentsPage() {
   const router = useRouter();
@@ -73,40 +71,34 @@ export default function AssignmentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [mounted, setMounted] = useState(false);
-  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const currentDate = useMemo(() => new Date(), []);
 
   useEffect(() => {
     setMounted(true);
-    setCurrentDate(new Date());
   }, []);
 
-  // WebSocket connection
+  // WebSocket connection & real-time updates
   useWebSocket();
+  const loadAssignments = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getAssignments(sortBy, sortOrder, filterStatus || undefined);
+      setAssignments(response.data || []);
+    } catch (err: any) {
+      toaster.create({
+        title: 'Error loading assignments',
+        description: err.response?.data?.message || 'Failed to load assignments',
+        type: 'error',
+        duration: 4000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [sortBy, sortOrder, filterStatus]);
 
-  // Listen for real-time assignment changes
-  useEffect(() => {
-    const handleAssignmentCreated = (data: any) => {
-      loadAssignments();
-    };
-
-    const handleAssignmentUpdated = (data: any) => {
-      loadAssignments();
-    };
-
-    const handleAssignmentDeleted = (data: any) => {
-      loadAssignments();
-    };
-
-    wsService.on('assignment_created', handleAssignmentCreated);
-    wsService.on('assignment_updated', handleAssignmentUpdated);
-    wsService.on('assignment_deleted', handleAssignmentDeleted);
-
-    return () => {
-      wsService.removeListener('assignment_created', handleAssignmentCreated);
-      wsService.removeListener('assignment_updated', handleAssignmentUpdated);
-      wsService.removeListener('assignment_deleted', handleAssignmentDeleted);
-    };
-  }, []);
+  useWebSocketEvent('assignment_created', loadAssignments);
+  useWebSocketEvent('assignment_updated', loadAssignments);
+  useWebSocketEvent('assignment_deleted', loadAssignments);
 
   useEffect(() => {
     if (!mounted) return;
@@ -120,82 +112,31 @@ export default function AssignmentsPage() {
       setCurrentUser(JSON.parse(userStr));
     }
     loadAssignments();
-  }, [router, mounted]);
+  }, [router, mounted, loadAssignments]);
 
   const canDeleteAssignmentFn = (assignment: any) => {
     if (!currentUser) return false;
-    const currentRoleId = currentUser.roleId || ROLE_NAME_TO_ID[currentUser.role] || 99;
-    if (currentRoleId > 4) return false;
-    if (currentRoleId <= 2) return true;
-    const isCreator = assignment.assigned_by_username === currentUser.username;
-    const isAssignee = assignment.assigned_to_username === currentUser.username;
-    return isCreator || isAssignee;
+    const rid = getRoleId(currentUser);
+    if (rid > 4) return false;
+    if (rid <= 2) return true;
+    return assignment.assigned_by_username === currentUser.username ||
+           assignment.assigned_to_username === currentUser.username;
   };
 
-  const loadAssignments = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      params.append('sortBy', sortBy);
-      params.append('sortOrder', sortOrder);
-      if (filterStatus) {
-        params.append('status', filterStatus);
-      }
-      const response = await apiService.getAssignments();
-      setAssignments(response.data || []);
-    } catch (err: any) {
-      toaster.create({
-        title: 'Error loading assignments',
-        description: err.response?.data?.message || 'Failed to load assignments',
-        type: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const response = await apiService.getUsers();
       const allUsers = response.data || [];
+      const rid = getRoleId(currentUser);
       
-      // Filter users based on current user's role
-      // CEO can assign to anyone except other CEOs
-      // COO can assign to DEPT_HEAD, SENIOR, ASSOCIATE
-      // DEPT_HEAD can assign to SENIOR, ASSOCIATE
-      // SENIOR can assign to ASSOCIATE
-      let filteredUsers = allUsers;
-      
-      if (currentUser) {
-        const currentRoleId = currentUser.roleId || ROLE_NAME_TO_ID[currentUser.role] || 999;
-        
-        if (currentRoleId === 1) {
-          // CEO: Can assign to anyone except other CEOs
-          filteredUsers = allUsers.filter((u: any) => {
-            const userRoleId = u.role_id || ROLE_NAME_TO_ID[u.role] || 999;
-            return userRoleId !== 1;
-          });
-        } else if (currentRoleId === 2) {
-          // COO: Can assign to DEPT_HEAD, SENIOR, ASSOCIATE
-          filteredUsers = allUsers.filter((u: any) => {
-            const userRoleId = u.role_id || ROLE_NAME_TO_ID[u.role] || 999;
-            return userRoleId >= 3;
-          });
-        } else if (currentRoleId === 3) {
-          // DEPT_HEAD: Can assign to SENIOR, ASSOCIATE
-          filteredUsers = allUsers.filter((u: any) => {
-            const userRoleId = u.role_id || ROLE_NAME_TO_ID[u.role] || 999;
-            return userRoleId >= 4;
-          });
-        } else if (currentRoleId === 4) {
-          // SENIOR: Can assign to ASSOCIATE
-          filteredUsers = allUsers.filter((u: any) => {
-            const userRoleId = u.role_id || ROLE_NAME_TO_ID[u.role] || 999;
-            return userRoleId >= 5;
-          });
-        }
-      }
+      const filteredUsers = allUsers.filter((u: any) => {
+        const userRoleId = u.role_id || ROLE_ID_MAP[u.role] || 999;
+        if (rid === 1) return userRoleId !== 1;
+        if (rid === 2) return userRoleId >= 3;
+        if (rid === 3) return userRoleId >= 4;
+        if (rid === 4) return userRoleId >= 5;
+        return false;
+      });
       
       setUsers(filteredUsers);
     } catch (err: any) {
@@ -203,17 +144,16 @@ export default function AssignmentsPage() {
         title: 'Error loading users',
         description: err.response?.data?.message || 'Failed to load users',
         type: 'error',
-        duration: 5000,
+        duration: 4000,
       });
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
-    const canManageUsers = currentUser?.role === 'CEO' || currentUser?.role === 'COO';
-    if (canManageUsers) {
+    if (currentUser && getRoleId(currentUser) <= 4) {
       loadUsers();
     }
-  }, [currentUser]);
+  }, [currentUser, loadUsers]);
 
   const handleDeleteAssignment = async () => {
     if (!deleteConfirm) return;
@@ -294,24 +234,13 @@ export default function AssignmentsPage() {
     }
   };
 
-  const canAssignWork = ['CEO', 'COO', 'Departmental_Head', 'Senior_Associate', 'Departmental Head', 'Senior Associate', 'DEPT_HEAD', 'SENIOR'].includes(currentUser?.role || '') || [1, 2, 3, 4].includes(currentUser?.roleId);
-  const canManageUsers = currentUser?.role === 'CEO' || currentUser?.role === 'COO' || [1, 2].includes(currentUser?.roleId);
-
-  const getRoleId = () => {
-    const roleMap: Record<string, number> = {
-      'CEO': 1, 'COO': 2, 'Departmental_Head': 3, 'DEPT_HEAD': 3,
-      'Senior_Associate': 4, 'SENIOR': 4, 'Associate': 5, 'ASSOCIATE': 5,
-    };
-    return currentUser?.roleId || roleMap[currentUser?.role] || 99;
-  };
-
-  const isCeoOrCoo = () => [1, 2].includes(getRoleId());
-  const isDeptHead = () => getRoleId() === 3;
+  const canAssignWork = getRoleId(currentUser) <= 4;
+  const canManageUsers = getRoleId(currentUser) <= 2;
 
   const userOptions = users.map(u => ({ label: `${u.username} (${u.role})`, value: String(u.id) }));
 
   const isOverdue = (dueDate?: string) => {
-    if (!dueDate || !currentDate) return false;
+    if (!dueDate) return false;
     return new Date(dueDate) < currentDate;
   };
 
@@ -319,6 +248,20 @@ export default function AssignmentsPage() {
     if (!dateStr) return 'N/A';
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
+
+  // Memoize the filtered list so it's computed once per render
+  const filteredAssignments = useMemo(() => {
+    return assignments.filter(a => {
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        if (!a.title.toLowerCase().includes(term) &&
+            !a.assigned_to_username.toLowerCase().includes(term) &&
+            !a.assigned_by_username.toLowerCase().includes(term)) return false;
+      }
+      if (filterStatus && a.status !== filterStatus) return false;
+      return true;
+    });
+  }, [assignments, searchTerm, filterStatus]);
 
   return (
     <Box minH="100vh" bg="gray.50">
@@ -410,7 +353,7 @@ export default function AssignmentsPage() {
                 <HStack justify="space-between">
                   <VStack align="start" gap={0}>
                     <Heading size="md" color="gray.900" fontWeight="600">Your Assignments</Heading>
-                    <Text fontSize="sm" color="gray.500">{assignments.length} assignments</Text>
+                    <Text fontSize="sm" color="gray.500">{filteredAssignments.length} assignments</Text>
                   </VStack>
                 </HStack>
 
@@ -448,10 +391,7 @@ export default function AssignmentsPage() {
                     <Select
                       label=""
                       value={sortBy}
-                      onChange={(value) => {
-                        setSortBy(value);
-                        loadAssignments();
-                      }}
+                      onChange={(value) => setSortBy(value)}
                       options={[
                         { label: 'Created Date', value: 'created_at' },
                         { label: 'Due Date', value: 'due_date' },
@@ -462,10 +402,7 @@ export default function AssignmentsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
-                        loadAssignments();
-                      }}
+                      onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
                       borderRadius="md"
                     >
                       {sortOrder === 'DESC' ? '↓ Descending' : '↑ Ascending'}
@@ -477,19 +414,11 @@ export default function AssignmentsPage() {
             <Card.Body pt={4}>
               {loading ? (
                 <ListSkeleton count={4} />
-              ) : assignments.length === 0 ? (
+              ) : filteredAssignments.length === 0 ? (
                 <EmptyState icon={<FiClipboard size={40} />} title="No assignments found" description="There are no assignments to display" />
               ) : (
                 <VStack gap={3} align="stretch">
-                  {assignments
-                    .filter(a => {
-                      if (searchTerm && !a.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
-                          !a.assigned_to_username.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                          !a.assigned_by_username.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-                      if (filterStatus && a.status !== filterStatus) return false;
-                      return true;
-                    })
-                    .map((assignment) => (
+                  {filteredAssignments.map((assignment) => (
                     <Box key={assignment.id} p={4} borderWidth="1px" borderRadius="md" bg="white" transition="all 0.15s" _hover={{ borderColor: 'gray.300' }} borderLeftWidth="3px" borderLeftColor={assignment.status === 'completed' ? 'gray.400' : isOverdue(assignment.due_date) ? 'gray.900' : 'gray.300'}>
                       <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
                         <Box flex={1}>

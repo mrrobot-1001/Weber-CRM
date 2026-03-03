@@ -1,27 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    
     const token = localStorage.getItem('token');
-    
-    if (token) {
-      router.push('/dashboard');
-    } else {
-      router.push('/login');
-    }
-  }, [router, mounted]);
+    router.replace(token ? '/dashboard' : '/login');
+  }, [router]);
 
-  return null;
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 24, height: 24, border: '2px solid #e2e8f0', borderTopColor: '#1a202c', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  );
 }

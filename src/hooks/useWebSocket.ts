@@ -1,9 +1,8 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { wsService } from '@/services/websocket';
 
 export const useWebSocket = () => {
   const [connected, setConnected] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
   const connectAttempted = useRef(false);
 
   useEffect(() => {
@@ -11,44 +10,39 @@ export const useWebSocket = () => {
     connectAttempted.current = true;
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    
     if (!token) return;
 
     const handleConnected = () => setConnected(true);
     const handleDisconnected = () => setConnected(false);
-    const handleError = (err: Error) => setError(err);
 
     wsService.on('connected', handleConnected);
     wsService.on('disconnected', handleDisconnected);
-    wsService.on('error', handleError);
 
-    // Connect to WebSocket
-    wsService.connect(token).catch((err) => {
-      console.error('Failed to connect WebSocket:', err);
-      setError(err);
-    });
+    wsService.connect(token).catch(() => {});
 
     return () => {
       wsService.off('connected', handleConnected);
       wsService.off('disconnected', handleDisconnected);
-      wsService.off('error', handleError);
     };
   }, []);
 
-  return { connected, error };
+  return { connected };
 };
 
-// Hook for listening to specific events
-export const useWebSocketEvent = (
-  eventType: 'assignment_created' | 'assignment_updated' | 'assignment_deleted' |
-           'submission_created' | 'submission_updated' | 'submission_deleted' |
-           'evaluation_created' | 'evaluation_updated' | 'evaluation_deleted',
-  callback: (data: any) => void
-) => {
+type WSEvent = 'assignment_created' | 'assignment_updated' | 'assignment_deleted' |
+  'submission_created' | 'submission_updated' | 'submission_deleted' |
+  'evaluation_created' | 'evaluation_updated' | 'evaluation_deleted';
+
+// Stable event listener hook — callback ref avoids stale closures
+export const useWebSocketEvent = (eventType: WSEvent, callback: (data: any) => void) => {
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
   useEffect(() => {
-    wsService.on(eventType, callback);
+    const handler = (data: any) => callbackRef.current(data);
+    wsService.on(eventType, handler);
     return () => {
-      wsService.removeListener(eventType, callback);
+      wsService.removeListener(eventType, handler);
     };
-  }, [eventType, callback]);
+  }, [eventType]);
 };

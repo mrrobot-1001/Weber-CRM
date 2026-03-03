@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 const API_URL = '/api';
 
@@ -9,6 +9,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string;
+  roleId?: number;
 }
 
 export interface LoginResponse {
@@ -44,7 +45,36 @@ export interface Submission {
 }
 
 class ApiService {
+  private client: AxiosInstance;
   private token: string | null = null;
+
+  constructor() {
+    this.client = axios.create({
+      baseURL: API_URL,
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    // Attach token to every request
+    this.client.interceptors.request.use((config) => {
+      const token = this.getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
+    // Auto-redirect on 401
+    this.client.interceptors.response.use(
+      (res) => res,
+      (error) => {
+        if (error.response?.status === 401 && typeof window !== 'undefined') {
+          this.clearToken();
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
 
   setToken(token: string) {
     this.token = token;
@@ -68,155 +98,110 @@ class ApiService {
     }
   }
 
-  private getHeaders() {
-    const headers: any = {
-      'Content-Type': 'application/json',
-    };
-    const token = this.getToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-  }
-
   async login(username: string, password: string): Promise<LoginResponse> {
-    const response = await axios.post(`${API_URL}/auth/login`, {
-      username,
-      password,
-    });
-    
-    if (response.data.success) {
-      this.setToken(response.data.data.token);
+    const { data } = await this.client.post('/auth/login', { username, password });
+    if (data.success) {
+      this.setToken(data.data.token);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+        localStorage.setItem('user', JSON.stringify(data.data.user));
       }
     }
-    
-    return response.data;
+    return data;
   }
 
   async logout() {
     try {
-      await axios.post(`${API_URL}/auth/logout`, {}, {
-        headers: this.getHeaders(),
-      });
+      await this.client.post('/auth/logout');
     } finally {
       this.clearToken();
     }
   }
 
   async getUsers() {
-    const response = await axios.get(`${API_URL}/users`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.get('/users');
+    return data;
   }
 
   async getUser(id: number) {
-    const response = await axios.get(`${API_URL}/users/${id}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.get(`/users/${id}`);
+    return data;
   }
 
   async createUser(userData: any) {
-    const response = await axios.post(`${API_URL}/users`, userData, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.post('/users', userData);
+    return data;
   }
 
   async updateUser(id: number, userData: any) {
-    const response = await axios.put(`${API_URL}/users/${id}`, userData, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.put(`/users/${id}`, userData);
+    return data;
+  }
+
+  async changePassword(id: number, currentPassword: string, newPassword: string) {
+    const { data } = await this.client.patch(`/users/${id}`, { currentPassword, newPassword });
+    return data;
   }
 
   async deleteUser(id: number) {
-    const response = await axios.delete(`${API_URL}/users/${id}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.delete(`/users/${id}`);
+    return data;
+  }
+
+  private buildParams(params: Record<string, string | undefined>) {
+    const sp = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      if (v) sp.append(k, v);
+    }
+    const str = sp.toString();
+    return str ? `?${str}` : '';
   }
 
   async getAssignments(sortBy?: string, sortOrder?: string, status?: string) {
-    const params = new URLSearchParams();
-    if (sortBy) params.append('sortBy', sortBy);
-    if (sortOrder) params.append('sortOrder', sortOrder);
-    if (status) params.append('status', status);
-    
-    const response = await axios.get(`${API_URL}/assignments${params.toString() ? '?' + params.toString() : ''}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const qs = this.buildParams({ sortBy, sortOrder, status });
+    const { data } = await this.client.get(`/assignments${qs}`);
+    return data;
   }
 
   async createAssignment(assignmentData: any) {
-    const response = await axios.post(`${API_URL}/assignments`, assignmentData, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.post('/assignments', assignmentData);
+    return data;
   }
 
   async updateAssignment(id: number, assignmentData: any) {
-    const response = await axios.put(`${API_URL}/assignments/${id}`, assignmentData, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.put(`/assignments/${id}`, assignmentData);
+    return data;
   }
 
   async deleteAssignment(id: number) {
-    const response = await axios.delete(`${API_URL}/assignments/${id}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.delete(`/assignments/${id}`);
+    return data;
   }
 
   async getSubmissions(sortBy?: string, sortOrder?: string, status?: string) {
-    const params = new URLSearchParams();
-    if (sortBy) params.append('sortBy', sortBy);
-    if (sortOrder) params.append('sortOrder', sortOrder);
-    if (status) params.append('status', status);
-    
-    const response = await axios.get(`${API_URL}/submissions${params.toString() ? '?' + params.toString() : ''}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const qs = this.buildParams({ sortBy, sortOrder, status });
+    const { data } = await this.client.get(`/submissions${qs}`);
+    return data;
   }
 
   async createSubmission(submissionData: any) {
-    const response = await axios.post(`${API_URL}/submissions`, submissionData, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.post('/submissions', submissionData);
+    return data;
   }
 
   async deleteSubmission(id: number) {
-    const response = await axios.delete(`${API_URL}/submissions/${id}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.delete(`/submissions/${id}`);
+    return data;
   }
 
   async getEvaluations(sortBy?: string, sortOrder?: string, rating?: string, status?: string) {
-    const params = new URLSearchParams();
-    if (sortBy) params.append('sortBy', sortBy);
-    if (sortOrder) params.append('sortOrder', sortOrder);
-    if (rating) params.append('rating', rating);
-    if (status) params.append('status', status);
-    
-    const response = await axios.get(`${API_URL}/evaluations${params.toString() ? '?' + params.toString() : ''}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const qs = this.buildParams({ sortBy, sortOrder, rating, status });
+    const { data } = await this.client.get(`/evaluations${qs}`);
+    return data;
   }
 
   async createEvaluation(evaluationData: any) {
-    const response = await axios.post(`${API_URL}/evaluations`, evaluationData, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    const { data } = await this.client.post('/evaluations', evaluationData);
+    return data;
   }
 }
 

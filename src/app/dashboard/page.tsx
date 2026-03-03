@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -13,19 +13,52 @@ import {
   Grid,
   Card,
   Flex,
-  Menu,
-  IconButton,
   Drawer,
   useDisclosure,
-  Avatar,
 } from '@chakra-ui/react';
-import { FiMenu, FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiChevronRight, FiPlus, FiUser, FiStar } from 'react-icons/fi';
-import { Logo } from '@/components/logo';
+import { FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiChevronRight, FiPlus, FiUser, FiStar } from 'react-icons/fi';
 import { Navbar } from '@/components/navbar';
 import { apiService, User } from '@/services/api';
-import { toaster } from '@/components/ui/toaster';
 import { DashboardCardSkeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/common';
+
+interface NavItem {
+  label: string;
+  icon: React.ReactNode;
+  href: string;
+  active?: boolean;
+  managementOnly?: boolean;
+}
+
+function SidebarNav({ items, router, onNavigate }: { items: NavItem[]; router: any; onNavigate?: () => void }) {
+  return (
+    <VStack gap={1} align="stretch">
+      {items.map((item) => (
+        <Button
+          key={item.href}
+          variant={item.active ? 'solid' : 'ghost'}
+          justifyContent="flex-start"
+          borderRadius="md"
+          bg={item.active ? 'gray.900' : undefined}
+          color={item.active ? 'white' : undefined}
+          py={6}
+          fontWeight={item.active ? '600' : 'normal'}
+          _hover={item.active ? { bg: 'gray.800' } : { bg: 'gray.100' }}
+          onClick={() => {
+            if (!item.active) {
+              router.push(item.href);
+              onNavigate?.();
+            }
+          }}
+        >
+          <Box mr={3}>{item.icon}</Box>
+          {item.label}
+          {!item.active && <Box ml="auto"><FiChevronRight /></Box>}
+        </Button>
+      ))}
+    </VStack>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -38,11 +71,33 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [currentDate, setCurrentDate] = useState('');
+
+  const currentDate = useMemo(() => 
+    new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), 
+  []);
 
   useEffect(() => {
     setMounted(true);
-    setCurrentDate(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+  }, []);
+
+  const loadDashboardData = useCallback(async () => {
+    try {
+      const [usersRes, assignmentsRes, submissionsRes] = await Promise.all([
+        apiService.getUsers().catch(() => ({ data: [] })),
+        apiService.getAssignments().catch(() => ({ data: [] })),
+        apiService.getSubmissions().catch(() => ({ data: [] })),
+      ]);
+
+      setStats({
+        totalUsers: usersRes.data?.length || 0,
+        totalAssignments: assignmentsRes.data?.length || 0,
+        totalSubmissions: submissionsRes.data?.length || 0,
+      });
+    } catch {
+      // Silently fail - stats will show 0
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -61,29 +116,20 @@ export default function DashboardPage() {
     }
 
     loadDashboardData();
-  }, [router, mounted]);
-
-  const loadDashboardData = async () => {
-    try {
-      const [usersRes, assignmentsRes, submissionsRes] = await Promise.all([
-        apiService.getUsers().catch(() => ({ data: [] })),
-        apiService.getAssignments().catch(() => ({ data: [] })),
-        apiService.getSubmissions().catch(() => ({ data: [] })),
-      ]);
-
-      setStats({
-        totalUsers: usersRes.data?.length || 0,
-        totalAssignments: assignmentsRes.data?.length || 0,
-        totalSubmissions: submissionsRes.data?.length || 0,
-      });
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [router, mounted, loadDashboardData]);
 
   const isManagementRole = user?.role === 'CEO' || user?.role === 'COO' || user?.role === 'Departmental_Head';
+
+  const navItems: NavItem[] = useMemo(() => [
+    { label: 'Dashboard', icon: <FiBarChart2 size={18} />, href: '/dashboard', active: true },
+    ...(isManagementRole ? [
+      { label: 'Users', icon: <FiUsers size={18} />, href: '/users' },
+      { label: 'Assignments', icon: <FiClipboard size={18} />, href: '/assignments' },
+    ] : []),
+    { label: 'Submissions', icon: <FiCheckSquare size={18} />, href: '/submissions' },
+    { label: 'Evaluations', icon: <FiStar size={18} />, href: '/evaluations' },
+    { label: 'My Profile', icon: <FiUser size={18} />, href: '/profile' },
+  ], [isManagementRole]);
 
   return (
     <Box minH="100vh" bg="gray.50">
@@ -103,85 +149,7 @@ export default function DashboardPage() {
             <Drawer.Title fontWeight="bold">Menu</Drawer.Title>
           </Drawer.Header>
           <Drawer.Body py={4}>
-            <VStack gap={1} align="stretch">
-              <Button 
-                variant="solid" 
-                justifyContent="flex-start" 
-                borderRadius="md"
-                bg="gray.900"
-                color="white"
-                py={6}
-                _hover={{ bg: 'gray.800' }}
-              >
-                <FiBarChart2 style={{ marginRight: '12px' }} />
-                Dashboard
-              </Button>
-              {isManagementRole && (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    justifyContent="flex-start" 
-                    onClick={() => router.push('/users')}
-                    borderRadius="lg"
-                    py={6}
-                    _hover={{ bg: 'gray.100' }}
-                  >
-                    <FiUsers style={{ marginRight: '12px' }} />
-                    Users
-                    <Box ml="auto"><FiChevronRight /></Box>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    justifyContent="flex-start" 
-                    onClick={() => router.push('/assignments')}
-                    borderRadius="lg"
-                    py={6}
-                    _hover={{ bg: 'gray.100' }}
-                  >
-                    <FiClipboard style={{ marginRight: '12px' }} />
-                    Assignments
-                    <Box ml="auto"><FiChevronRight /></Box>
-                  </Button>
-                </>
-              )}
-              <Button 
-                variant="ghost" 
-                justifyContent="flex-start" 
-                onClick={() => router.push('/submissions')}
-                borderRadius="lg"
-                py={6}
-                _hover={{ bg: 'gray.100' }}
-              >
-                <FiCheckSquare style={{ marginRight: '12px' }} />
-                Submissions
-                <Box ml="auto"><FiChevronRight /></Box>
-              </Button>
-              <Button 
-                variant="ghost" 
-                justifyContent="flex-start" 
-                onClick={() => router.push('/evaluations')}
-                borderRadius="lg"
-                py={6}
-                _hover={{ bg: 'gray.100' }}
-              >
-                <FiStar style={{ marginRight: '12px' }} />
-                Evaluations
-                <Box ml="auto"><FiChevronRight /></Box>
-              </Button>
-              <Box borderTop="1px" borderColor="gray.200" my={2} />
-              <Button 
-                variant="ghost" 
-                justifyContent="flex-start" 
-                onClick={() => router.push('/profile')}
-                borderRadius="lg"
-                py={6}
-                _hover={{ bg: 'gray.100' }}
-              >
-                <FiUser style={{ marginRight: '12px' }} />
-                My Profile
-                <Box ml="auto"><FiChevronRight /></Box>
-              </Button>
-            </VStack>
+            <SidebarNav items={navItems} router={router} onNavigate={onClose} />
           </Drawer.Body>
         </Drawer.Content>
       </Drawer.Root>
@@ -197,80 +165,7 @@ export default function DashboardPage() {
           minH="calc(100vh - 60px)"
           p={4}
         >
-          <VStack gap={1} align="stretch">
-            <Button 
-              variant="solid" 
-              justifyContent="flex-start" 
-              borderRadius="md"
-              bg="gray.900"
-              color="white"
-              py={6}
-              fontWeight="600"
-            >
-              <FiBarChart2 style={{ marginRight: '12px' }} />
-              Dashboard
-            </Button>
-            {isManagementRole && (
-              <>
-                <Button 
-                  variant="ghost" 
-                  justifyContent="flex-start" 
-                  onClick={() => router.push('/users')}
-                  borderRadius="lg"
-                  py={6}
-                  _hover={{ bg: 'gray.100' }}
-                >
-                  <FiUsers style={{ marginRight: '12px' }} />
-                  Users
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  justifyContent="flex-start" 
-                  onClick={() => router.push('/assignments')}
-                  borderRadius="lg"
-                  py={6}
-                  _hover={{ bg: 'gray.100' }}
-                >
-                  <FiClipboard style={{ marginRight: '12px' }} />
-                  Assignments
-                </Button>
-              </>
-            )}
-            <Button 
-              variant="ghost" 
-              justifyContent="flex-start" 
-              onClick={() => router.push('/submissions')}
-              borderRadius="lg"
-              py={6}
-              _hover={{ bg: 'gray.100' }}
-            >
-              <FiCheckSquare style={{ marginRight: '12px' }} />
-              Submissions
-            </Button>
-            <Button 
-              variant="ghost" 
-              justifyContent="flex-start" 
-              onClick={() => router.push('/evaluations')}
-              borderRadius="lg"
-              py={6}
-              _hover={{ bg: 'gray.100' }}
-            >
-              <FiStar style={{ marginRight: '12px' }} />
-              Evaluations
-            </Button>
-            <Box borderTop="1px" borderColor="gray.200" my={2} />
-            <Button 
-              variant="ghost" 
-              justifyContent="flex-start" 
-              onClick={() => router.push('/profile')}
-              borderRadius="lg"
-              py={6}
-              _hover={{ bg: 'gray.100' }}
-            >
-              <FiUser style={{ marginRight: '12px' }} />
-              My Profile
-            </Button>
-          </VStack>
+          <SidebarNav items={navItems} router={router} />
         </Box>
 
         {/* Main Content */}

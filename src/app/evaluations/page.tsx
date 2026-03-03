@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -13,32 +13,22 @@ import {
   Textarea,
   Card,
   Grid,
-  Flex,
-  Avatar,
   Input,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiStar, FiFilter, FiX, FiSearch } from 'react-icons/fi';
-import { Logo } from '@/components/logo';
+import { FiStar, FiFilter, FiX } from 'react-icons/fi';
 import { Navbar } from '@/components/navbar';
 import { apiService } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
-import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { StatusBadge } from '@/components/ui/badges';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/common';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { wsService } from '@/services/websocket';
+import { useWebSocket, useWebSocketEvent } from '@/hooks/useWebSocket';
 
-const ROLE_NAME_TO_ID: Record<string, number> = {
-  'CEO': 1,
-  'COO': 2,
-  'Departmental Head': 3,
-  'DEPT_HEAD': 3,
-  'Senior Associate': 4,
-  'SENIOR': 4,
-  'Associate': 5,
-  'ASSOCIATE': 5,
+const ROLE_ID_MAP: Record<string, number> = {
+  'CEO': 1, 'COO': 2, 'Departmental_Head': 3, 'Departmental Head': 3, 'DEPT_HEAD': 3,
+  'Senior_Associate': 4, 'Senior Associate': 4, 'SENIOR': 4,
+  'Associate': 5, 'ASSOCIATE': 5,
 };
 
 const RATING_OPTIONS = [
@@ -83,49 +73,10 @@ function EvaluationsPageContent() {
     setMounted(true);
   }, []);
 
-  // WebSocket connection
+  // WebSocket connection & real-time updates
   useWebSocket();
 
-  // Listen for real-time evaluation changes
-  useEffect(() => {
-    const handleEvaluationCreated = (data: any) => {
-      loadData();
-    };
-
-    const handleEvaluationUpdated = (data: any) => {
-      loadData();
-    };
-
-    const handleEvaluationDeleted = (data: any) => {
-      loadData();
-    };
-
-    wsService.on('evaluation_created', handleEvaluationCreated);
-    wsService.on('evaluation_updated', handleEvaluationUpdated);
-    wsService.on('evaluation_deleted', handleEvaluationDeleted);
-
-    return () => {
-      wsService.removeListener('evaluation_created', handleEvaluationCreated);
-      wsService.removeListener('evaluation_updated', handleEvaluationUpdated);
-      wsService.removeListener('evaluation_deleted', handleEvaluationDeleted);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    if (userStr) {
-      setCurrentUser(JSON.parse(userStr));
-    }
-    loadData();
-  }, [router, mounted]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [submissionsRes, evaluationsRes] = await Promise.all([
@@ -139,12 +90,30 @@ function EvaluationsPageContent() {
         title: 'Error loading data',
         description: err.response?.data?.message || 'Failed to load evaluations',
         type: 'error',
-        duration: 5000,
+        duration: 4000,
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useWebSocketEvent('evaluation_created', loadData);
+  useWebSocketEvent('evaluation_updated', loadData);
+  useWebSocketEvent('evaluation_deleted', loadData);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    if (userStr) {
+      setCurrentUser(JSON.parse(userStr));
+    }
+    loadData();
+  }, [router, mounted, loadData]);
 
   const handleCreateEvaluation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,22 +166,12 @@ function EvaluationsPageContent() {
     }
   };
 
-  const canEvaluate = ['CEO', 'COO', 'Departmental_Head', 'Senior_Associate', 'Departmental Head', 'Senior Associate', 'DEPT_HEAD', 'SENIOR'].includes(currentUser?.role || '') || [1, 2, 3, 4].includes(currentUser?.roleId);
-
-  const getRoleId = () => {
-    const roleMap: Record<string, number> = {
-      'CEO': 1, 'COO': 2, 'Departmental_Head': 3, 'DEPT_HEAD': 3,
-      'Senior_Associate': 4, 'SENIOR': 4, 'Associate': 5, 'ASSOCIATE': 5,
-    };
-    return currentUser?.roleId || roleMap[currentUser?.role] || 99;
-  };
-
-  const isCeoOrCoo = () => [1, 2].includes(getRoleId());
-  const isManager = () => [1, 2, 3, 4].includes(getRoleId());
+  const canEvaluate = currentUser && (currentUser.roleId || ROLE_ID_MAP[currentUser?.role] || 99) <= 4;
 
   const canDeleteEvaluation = (evaluation: any) => {
     if (!currentUser) return false;
-    return isCeoOrCoo() || evaluation.evaluated_by_username === currentUser.username;
+    const rid = currentUser.roleId || ROLE_ID_MAP[currentUser.role] || 99;
+    return rid <= 2 || evaluation.evaluated_by_username === currentUser.username;
   };
 
 
@@ -221,21 +180,23 @@ function EvaluationsPageContent() {
     value: String(s.id)
   }));
 
-  // Filter evaluations based on filter criteria
-  const filteredEvaluations = evaluations.filter(e => {
-    if (filters.status && e.status !== filters.status) return false;
-    if (filters.rating && e.rating !== Number(filters.rating)) return false;
-    if (filters.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase();
-      const hasMatch = 
-        e.assignment_title?.toLowerCase().includes(searchLower) ||
-        e.submitted_by_username?.toLowerCase().includes(searchLower) ||
-        e.evaluated_by_username?.toLowerCase().includes(searchLower) ||
-        e.comments?.toLowerCase().includes(searchLower);
-      if (!hasMatch) return false;
-    }
-    return true;
-  });
+  // Filter evaluations based on filter criteria  
+  const filteredEvaluations = useMemo(() => {
+    return evaluations.filter(e => {
+      if (filters.status && e.status !== filters.status) return false;
+      if (filters.rating && e.rating !== Number(filters.rating)) return false;
+      if (filters.searchTerm) {
+        const term = filters.searchTerm.toLowerCase();
+        const hasMatch = 
+          e.assignment_title?.toLowerCase().includes(term) ||
+          e.submitted_by_username?.toLowerCase().includes(term) ||
+          e.evaluated_by_username?.toLowerCase().includes(term) ||
+          e.comments?.toLowerCase().includes(term);
+        if (!hasMatch) return false;
+      }
+      return true;
+    });
+  }, [evaluations, filters]);
 
   return (
     <Box minH="100vh" bg="gray.50">

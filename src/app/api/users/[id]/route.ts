@@ -3,6 +3,7 @@ import { getAuthenticatedUser, jsonResponse, errorResponse } from '@/lib/server/
 import { query } from '@/lib/db/pool';
 import { canDeleteUser, canDeleteUserWithRole } from '@/lib/server/permissions';
 import logger from '@/lib/db/logger';
+import bcryptjs from 'bcryptjs';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -169,4 +170,58 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return errorResponse('Unauthorized', 401);
+    }
 
+    const { id } = await params;
+    const targetUserId = parseInt(id, 10);
+
+    if (isNaN(targetUserId)) {
+      return errorResponse('Invalid user ID', 400);
+    }
+
+    // Only allow users to change their own password
+    if (user.userId !== targetUserId) {
+      return errorResponse('Forbidden: You can only change your own password', 403);
+    }
+
+    const body = await req.json();
+    const { currentPassword, newPassword } = body;
+
+    if (!currentPassword || !newPassword) {
+      return errorResponse('Current password and new password are required', 400);
+    }
+
+    if (newPassword.length < 6) {
+      return errorResponse('New password must be at least 6 characters', 400);
+    }
+
+    // Fetch current password hash
+    const userResult = await query('SELECT password_hash FROM users WHERE id = $1', [targetUserId]);
+    if (userResult.rows.length === 0) {
+      return errorResponse('User not found', 404);
+    }
+
+    const isValid = await bcryptjs.compare(currentPassword, userResult.rows[0].password_hash);
+    if (!isValid) {
+      return errorResponse('Current password is incorrect', 401);
+    }
+
+    const newHash = await bcryptjs.hash(newPassword, 10);
+    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [newHash, targetUserId]);
+
+    logger.info(`Password changed for user ${targetUserId}`);
+
+    return jsonResponse(true, 'Password changed successfully');
+  } catch (error: any) {
+    logger.error('Error changing password:', error);
+    return errorResponse('Error changing password', 500, error);
+  }
+}

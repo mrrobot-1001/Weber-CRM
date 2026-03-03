@@ -88,14 +88,14 @@ export default function ProfilePage() {
         title: 'Profile updated',
         description: 'Your profile has been updated successfully',
         type: 'success',
-        duration: 4000,
+        duration: 3000,
       });
     } catch (err: any) {
       toaster.create({
         title: 'Update failed',
         description: err.message || 'Failed to update profile',
         type: 'error',
-        duration: 5000,
+        duration: 4000,
       });
     } finally {
       setSaving(false);
@@ -110,7 +110,7 @@ export default function ProfilePage() {
         title: 'Passwords do not match',
         description: 'Please make sure both passwords are the same',
         type: 'error',
-        duration: 4000,
+        duration: 3000,
       });
       return;
     }
@@ -120,29 +120,29 @@ export default function ProfilePage() {
         title: 'Password too short',
         description: 'Password must be at least 6 characters long',
         type: 'error',
-        duration: 4000,
+        duration: 3000,
       });
       return;
     }
 
     setSaving(true);
     try {
-      // In a real app, you'd call an API endpoint to change password
-      // await apiService.changePassword(passwordForm);
+      if (!currentUser?.id) throw new Error('User ID not found');
+      await apiService.changePassword(currentUser.id, passwordForm.currentPassword, passwordForm.newPassword);
       toaster.create({
         title: 'Password changed',
         description: 'Your password has been updated successfully',
         type: 'success',
-        duration: 4000,
+        duration: 3000,
       });
       setChangingPassword(false);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
       toaster.create({
         title: 'Password change failed',
-        description: err.message || 'Failed to change password',
+        description: err.response?.data?.message || err.message || 'Failed to change password',
         type: 'error',
-        duration: 5000,
+        duration: 4000,
       });
     } finally {
       setSaving(false);
@@ -338,6 +338,7 @@ export default function ProfilePage() {
                         <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">Current Password</Text>
                         <Input 
                           type="password"
+                          autoComplete="current-password"
                           value={passwordForm.currentPassword} 
                           onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} 
                           placeholder="Enter current password"
@@ -349,6 +350,7 @@ export default function ProfilePage() {
                         <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">New Password</Text>
                         <Input 
                           type="password"
+                          autoComplete="new-password"
                           value={passwordForm.newPassword} 
                           onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} 
                           placeholder="Enter new password"
@@ -360,6 +362,7 @@ export default function ProfilePage() {
                         <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">Confirm New Password</Text>
                         <Input 
                           type="password"
+                          autoComplete="new-password"
                           value={passwordForm.confirmPassword} 
                           onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} 
                           placeholder="Confirm new password"
