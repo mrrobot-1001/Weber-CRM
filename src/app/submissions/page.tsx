@@ -221,15 +221,15 @@ function SubmissionsPageContent() {
         showBack={true} 
       />
 
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="container.xl" py={8} className="page-enter">
         <VStack gap={6} align="stretch">
           {currentUser?.role !== 'CEO' && currentUser?.role !== 'COO' && (
-            <Card.Root borderRadius="xl" boxShadow="sm">
+            <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
                 <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="green.100" color="green.600"><FiUpload size={20} /></Box>
+                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiUpload size={20} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.800">Submit Work</Heading>
+                    <Heading size="md" color="gray.900" fontWeight="600">Submit Work</Heading>
                     <Text fontSize="sm" color="gray.500">Submit completed assignments for review</Text>
                   </VStack>
                 </HStack>
@@ -258,14 +258,14 @@ function SubmissionsPageContent() {
 
           {/* Evaluation section moved to /evaluations page */}
 
-          <Card.Root borderRadius="xl" boxShadow="sm">
+          <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
             <Card.Header pb={4}>
               <VStack align="stretch" gap={4}>
                 <HStack justify="space-between">
                   <HStack gap={3}>
-                    <Box p={2} borderRadius="lg" bg="blue.100" color="blue.600"><FiFileText size={20} /></Box>
+                    <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiFileText size={20} /></Box>
                     <VStack align="start" gap={0}>
-                      <Heading size="md">Recent Submissions</Heading>
+                      <Heading size="md" fontWeight="600">Recent Submissions</Heading>
                       <Text fontSize="sm" color="gray.500">{filteredSubmissions.length} submissions</Text>
                     </VStack>
                   </HStack>

@@ -16,7 +16,7 @@ import {
   Drawer,
   useDisclosure,
 } from '@chakra-ui/react';
-import { FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiChevronRight, FiPlus, FiUser, FiStar } from 'react-icons/fi';
+import { FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiPlus, FiUser, FiStar } from 'react-icons/fi';
 import { Navbar } from '@/components/navbar';
 import { apiService, User } from '@/services/api';
 import { DashboardCardSkeleton } from '@/components/ui/skeleton';
@@ -38,12 +38,15 @@ function SidebarNav({ items, router, onNavigate }: { items: NavItem[]; router: a
           key={item.href}
           variant={item.active ? 'solid' : 'ghost'}
           justifyContent="flex-start"
-          borderRadius="md"
+          borderRadius="lg"
           bg={item.active ? 'gray.900' : undefined}
           color={item.active ? 'white' : undefined}
-          py={6}
-          fontWeight={item.active ? '600' : 'normal'}
-          _hover={item.active ? { bg: 'gray.800' } : { bg: 'gray.100' }}
+          py={5}
+          px={3}
+          fontSize="sm"
+          fontWeight={item.active ? '600' : '500'}
+          _hover={item.active ? { bg: 'gray.800' } : { bg: 'gray.50' }}
+          transition="all 0.15s"
           onClick={() => {
             if (!item.active) {
               router.push(item.href);
@@ -51,9 +54,8 @@ function SidebarNav({ items, router, onNavigate }: { items: NavItem[]; router: a
             }
           }}
         >
-          <Box mr={3}>{item.icon}</Box>
+          <Box mr={2.5} opacity={item.active ? 1 : 0.7}>{item.icon}</Box>
           {item.label}
-          {!item.active && <Box ml="auto"><FiChevronRight /></Box>}
         </Button>
       ))}
     </VStack>
@@ -145,10 +147,10 @@ export default function DashboardPage() {
       <Drawer.Root open={open} onOpenChange={({ open }) => open ? onOpen() : onClose()} placement="start">
         <Drawer.Backdrop />
         <Drawer.Content>
-          <Drawer.Header borderBottom="1px" borderColor="gray.200">
-            <Drawer.Title fontWeight="bold">Menu</Drawer.Title>
+          <Drawer.Header borderBottom="1px" borderColor="gray.100">
+            <Drawer.Title fontWeight="600" fontSize="md">Navigation</Drawer.Title>
           </Drawer.Header>
-          <Drawer.Body py={4}>
+          <Drawer.Body py={3}>
             <SidebarNav items={navItems} router={router} onNavigate={onClose} />
           </Drawer.Body>
         </Drawer.Content>
@@ -158,27 +160,30 @@ export default function DashboardPage() {
         {/* Desktop Sidebar */}
         <Box
           display={{ base: 'none', md: 'block' }}
-          w="260px"
+          w="240px"
           bg="white"
           borderRight="1px"
-          borderColor="gray.200"
-          minH="calc(100vh - 60px)"
-          p={4}
+          borderColor="gray.100"
+          minH="calc(100vh - 56px)"
+          py={4}
+          px={3}
         >
           <SidebarNav items={navItems} router={router} />
         </Box>
 
         {/* Main Content */}
-        <Box flex="1" p={{ base: 4, md: 8 }}>
+        <Box flex="1" p={{ base: 4, md: 8 }} className="page-enter">
           <Container maxW="container.xl">
             <VStack gap={8} align="stretch">
               {/* Welcome Header */}
               <Box>
-                <Text fontSize="sm" color="gray.500" mb={1}>
+                <Text fontSize="xs" color="gray.400" mb={1} fontWeight="500" textTransform="uppercase" letterSpacing="0.05em">
                   {currentDate}
                 </Text>
-                <Heading size="xl" mb={2} color="gray.800">Welcome back, {user?.firstName}! 👋</Heading>
-                <Text color="gray.600">Here's an overview of your workspace</Text>
+                <Heading size="xl" mb={1} color="gray.900" fontWeight="700" letterSpacing="-0.01em">
+                  Welcome back, {user?.firstName} 👋
+                </Heading>
+                <Text color="gray.500" fontSize="sm">Here's an overview of your workspace</Text>
               </Box>
 
               {/* Stats Grid */}
@@ -212,10 +217,10 @@ export default function DashboardPage() {
               )}
 
               {/* Quick Actions */}
-              <Card.Root borderRadius="lg" borderWidth="1px" borderColor="gray.200" bg="white" boxShadow="none">
+              <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100" bg="white" boxShadow="none">
                 <Card.Header pb={2}>
                   <Heading size="md" color="gray.900" fontWeight="600">Quick Actions</Heading>
-                  <Text fontSize="sm" color="gray.500" mt={1}>
+                  <Text fontSize="sm" color="gray.500" mt={0.5}>
                     Jump to common tasks
                   </Text>
                 </Card.Header>
@@ -226,12 +231,12 @@ export default function DashboardPage() {
                         <Button 
                           size="lg" 
                           onClick={() => router.push('/users')}
-                          borderRadius="md"
+                          borderRadius="xl"
                           bg="gray.50"
                           color="gray.900"
                           borderWidth="1px"
-                          borderColor="gray.200"
-                          _hover={{ bg: 'gray.100', borderColor: 'gray.300' }}
+                          borderColor="gray.100"
+                          _hover={{ bg: 'gray.100', borderColor: 'gray.200' }}
                           transition="all 0.15s"
                           py={8}
                         >
@@ -243,7 +248,7 @@ export default function DashboardPage() {
                         <Button 
                           size="lg" 
                           onClick={() => router.push('/assignments')}
-                          borderRadius="md"
+                          borderRadius="xl"
                           bg="gray.900"
                           color="white"
                           _hover={{ bg: 'gray.800' }}
@@ -263,12 +268,12 @@ export default function DashboardPage() {
                     <Button 
                       size="lg" 
                       onClick={() => router.push('/submissions')}
-                      borderRadius="md"
+                      borderRadius="xl"
                       bg="gray.50"
                       color="gray.900"
                       borderWidth="1px"
-                      borderColor="gray.200"
-                      _hover={{ bg: 'gray.100', borderColor: 'gray.300' }}
+                      borderColor="gray.100"
+                      _hover={{ bg: 'gray.100', borderColor: 'gray.200' }}
                       transition="all 0.15s"
                       py={8}
                     >

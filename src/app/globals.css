@@ -20,6 +20,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Selection color */
+::selection {
+  background: rgba(26, 32, 44, 0.12);
+  color: #1a202c;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
 /* Prevent iOS zoom on input focus */
 input, select, textarea {
   font-size: 16px !important;
@@ -29,4 +51,30 @@ input, select, textarea {
   input, select, textarea {
     font-size: inherit !important;
   }
+}
+
+/* Shared page transition */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageEnter 0.3s ease-out;
+}
+
+/* Shared modal animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Focus ring for interactive elements */
+*:focus-visible {
+  outline: 2px solid #1a202c;
+  outline-offset: 2px;
+  border-radius: 4px;
 }

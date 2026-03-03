@@ -4,12 +4,12 @@ import { Box, Skeleton, VStack, HStack, Grid } from '@chakra-ui/react'
 
 export function CardSkeleton() {
   return (
-    <Box p={4} borderWidth="1px" borderRadius="lg" bg="white">
+    <Box p={4} borderWidth="1px" borderRadius="xl" bg="white" borderColor="gray.100">
       <VStack align="stretch" gap={3}>
-        <Skeleton height="20px" width="60%" />
-        <Skeleton height="16px" width="80%" />
+        <Skeleton height="18px" width="60%" borderRadius="md" />
+        <Skeleton height="14px" width="80%" borderRadius="md" />
         <HStack justify="space-between">
-          <Skeleton height="14px" width="30%" />
+          <Skeleton height="14px" width="30%" borderRadius="md" />
           <Skeleton height="24px" width="80px" borderRadius="full" />
         </HStack>
       </VStack>
@@ -19,15 +19,15 @@ export function CardSkeleton() {
 
 export function TableRowSkeleton() {
   return (
-    <Box p={4} borderWidth="1px" borderRadius="md" bg="white">
+    <Box p={4} borderWidth="1px" borderRadius="xl" bg="white" borderColor="gray.100">
       <HStack justify="space-between">
         <VStack align="start" gap={2} flex={1}>
-          <Skeleton height="18px" width="40%" />
-          <Skeleton height="14px" width="60%" />
+          <Skeleton height="16px" width="40%" borderRadius="md" />
+          <Skeleton height="12px" width="60%" borderRadius="md" />
         </VStack>
         <HStack gap={3}>
           <Skeleton height="24px" width="80px" borderRadius="full" />
-          <Skeleton height="32px" width="70px" borderRadius="md" />
+          <Skeleton height="32px" width="70px" borderRadius="lg" />
         </HStack>
       </HStack>
     </Box>
@@ -36,18 +36,18 @@ export function TableRowSkeleton() {
 
 export function FormSkeleton() {
   return (
-    <Box p={6} borderWidth="1px" borderRadius="lg" bg="white">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="white" borderColor="gray.100">
       <VStack align="stretch" gap={4}>
-        <Skeleton height="24px" width="40%" mb={2} />
+        <Skeleton height="24px" width="40%" mb={2} borderRadius="md" />
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
           {[...Array(6)].map((_, i) => (
             <VStack key={i} align="stretch" gap={2}>
-              <Skeleton height="14px" width="30%" />
-              <Skeleton height="40px" width="100%" borderRadius="md" />
+              <Skeleton height="12px" width="30%" borderRadius="md" />
+              <Skeleton height="40px" width="100%" borderRadius="lg" />
             </VStack>
           ))}
         </Grid>
-        <Skeleton height="44px" width="150px" borderRadius="lg" mt={2} />
+        <Skeleton height="40px" width="150px" borderRadius="lg" mt={2} />
       </VStack>
     </Box>
   )
@@ -55,14 +55,13 @@ export function FormSkeleton() {
 
 export function DashboardCardSkeleton() {
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="white" boxShadow="sm">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="white" borderColor="gray.100">
       <VStack align="start" gap={3}>
         <HStack w="full" justify="space-between">
-          <Skeleton height="16px" width="40%" />
-          <Skeleton height="40px" width="40px" borderRadius="lg" />
+          <Skeleton height="14px" width="35%" borderRadius="md" />
+          <Skeleton height="40px" width="40px" borderRadius="xl" />
         </HStack>
-        <Skeleton height="36px" width="60%" />
-        <Skeleton height="14px" width="50%" />
+        <Skeleton height="32px" width="50%" borderRadius="md" />
       </VStack>
     </Box>
   )

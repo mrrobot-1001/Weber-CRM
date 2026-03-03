@@ -78,7 +78,8 @@ export default function ProfilePage() {
         email: form.email,
       };
       
-      const updatedUser = await apiService.updateUser(currentUser.id, payload);
+      const response = await apiService.updateUser(currentUser.id, payload);
+      const updatedUser = response.data || response;
       
       // Update the user in localStorage to keep session in sync
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -174,26 +175,26 @@ export default function ProfilePage() {
         showBack={true} 
       />
 
-      <Container maxW="container.lg" py={8}>
+      <Container maxW="container.lg" py={8} className="page-enter">
         <VStack gap={6} align="stretch">
           {/* Profile Header Card */}
-          <Card.Root borderRadius="xl" boxShadow="md" overflow="hidden">
+          <Card.Root borderRadius="2xl" boxShadow="sm" overflow="hidden" borderWidth="1px" borderColor="gray.100">
             <Box 
-              h="120px" 
-              bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+              h="100px" 
+              bg="gray.900"
             />
             <Card.Body position="relative" pt={0}>
               <Flex direction={{ base: 'column', md: 'row' }} align={{ base: 'center', md: 'flex-end' }} gap={6}>
-                <Box mt="-60px">
-                  <Avatar.Root size="2xl" borderWidth="4px" borderColor="white" boxShadow="lg">
-                    <Avatar.Fallback bg="brand.500" color="white" fontSize="2xl">
+                <Box mt="-48px">
+                  <Avatar.Root size="2xl" borderWidth="4px" borderColor="white" boxShadow="md">
+                    <Avatar.Fallback bg="gray.700" color="white" fontSize="2xl">
                       {getInitials(currentUser?.firstName, currentUser?.lastName)}
                     </Avatar.Fallback>
                   </Avatar.Root>
                 </Box>
                 <VStack align={{ base: 'center', md: 'start' }} gap={1} flex={1} py={4}>
-                  <Heading size="xl" color="gray.800">{currentUser?.firstName} {currentUser?.lastName}</Heading>
-                  <Text color="gray.500">@{currentUser?.username}</Text>
+                  <Heading size="xl" color="gray.900" fontWeight="700">{currentUser?.firstName} {currentUser?.lastName}</Heading>
+                  <Text color="gray.500" fontSize="sm">@{currentUser?.username}</Text>
                   <Box 
                     px={3} 
                     py={1} 
@@ -224,12 +225,12 @@ export default function ProfilePage() {
 
           <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
             {/* Profile Information */}
-            <Card.Root borderRadius="xl" boxShadow="sm">
+            <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
                 <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="blue.100" color="blue.600"><FiUser size={20} /></Box>
+                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiUser size={20} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.800">Personal Information</Heading>
+                    <Heading size="md" color="gray.900" fontWeight="600">Personal Information</Heading>
                     <Text fontSize="sm" color="gray.500">Your basic profile details</Text>
                   </VStack>
                 </HStack>
@@ -320,12 +321,12 @@ export default function ProfilePage() {
             </Card.Root>
 
             {/* Security Settings */}
-            <Card.Root borderRadius="xl" boxShadow="sm">
+            <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
                 <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="orange.100" color="orange.600"><FiLock size={20} /></Box>
+                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiLock size={20} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.800">Security</Heading>
+                    <Heading size="md" color="gray.900" fontWeight="600">Security</Heading>
                     <Text fontSize="sm" color="gray.500">Manage your password</Text>
                   </VStack>
                 </HStack>
@@ -420,12 +421,12 @@ export default function ProfilePage() {
           </Grid>
 
           {/* Account Details */}
-          <Card.Root borderRadius="xl" boxShadow="sm">
+          <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
             <Card.Header pb={2}>
               <HStack gap={3}>
-                <Box p={2} borderRadius="lg" bg="gray.100" color="gray.600"><FiShield size={20} /></Box>
+                <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiShield size={20} /></Box>
                 <VStack align="start" gap={0}>
-                  <Heading size="md" color="gray.800">Account Details</Heading>
+                  <Heading size="md" color="gray.900" fontWeight="600">Account Details</Heading>
                   <Text fontSize="sm" color="gray.500">Your account information</Text>
                 </VStack>
               </HStack>

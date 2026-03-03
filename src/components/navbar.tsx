@@ -10,10 +10,9 @@ import {
   Button,
   IconButton,
   Avatar,
-  Menu,
   VStack,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiLogOut, FiMenu, FiUser } from 'react-icons/fi';
+import { FiArrowLeft, FiLogOut, FiMenu } from 'react-icons/fi';
 import { Logo } from '@/components/logo';
 import { apiService, User } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
@@ -50,99 +49,92 @@ export function Navbar({ title, subtitle, user, showBack, onMenuClick }: NavbarP
 
   return (
     <Box 
-      bg="rgba(255, 255, 255, 0.8)" 
-      backdropFilter="blur(16px)"
+      bg="rgba(255, 255, 255, 0.85)" 
+      backdropFilter="blur(20px)"
       borderBottom="1px solid"
-      borderColor="rgba(0, 0, 0, 0.05)"
+      borderColor="gray.100"
       px={{ base: 4, md: 6 }} 
-      py={4} 
+      py={3} 
       position="sticky" 
       top={0} 
-      zIndex={10} 
-      boxShadow="none"
+      zIndex={10}
     >
       <Flex justify="space-between" align="center" maxW="container.xl" mx="auto">
-        <HStack gap={4}>
+        <HStack gap={3}>
           {onMenuClick && (
             <IconButton 
               aria-label="Menu" 
               onClick={onMenuClick} 
               display={{ base: 'flex', md: 'none' }}
               variant="ghost"
-              size="lg"
+              size="sm"
+              borderRadius="lg"
+              _hover={{ bg: 'gray.100' }}
             >
-              <FiMenu />
+              <FiMenu size={20} />
             </IconButton>
           )}
           
           {showBack && (
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} borderRadius="lg" _hover={{ bg: 'gray.100' }}>
-              <HStack gap={2}>
-                <FiArrowLeft />
-                <Text>Back</Text>
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push('/dashboard')} 
+              borderRadius="lg" 
+              size="sm"
+              _hover={{ bg: 'gray.100' }}
+            >
+              <HStack gap={1.5}>
+                <FiArrowLeft size={16} />
+                <Text fontSize="sm">Back</Text>
               </HStack>
             </Button>
           )}
 
           <HStack gap={3} align="center">
-            <Box borderRadius="lg" overflow="hidden">
+            <Box borderRadius="xl" overflow="hidden" flexShrink={0}>
               <Logo size="sm" />
             </Box>
-            <VStack align="start" gap={0} display={{ base: 'none', md: 'flex' }}>
-              <Heading size="md" color="gray.800">{title}</Heading>
-              {subtitle && <Text fontSize="xs" color="gray.500">{subtitle}</Text>}
-            </VStack>
+            <Box display={{ base: 'none', md: 'block' }}>
+              <Heading size="sm" color="gray.900" fontWeight="600" lineHeight="1.2">{title}</Heading>
+              {subtitle && <Text fontSize="xs" color="gray.500" mt={0.5}>{subtitle}</Text>}
+            </Box>
           </HStack>
         </HStack>
 
-        <HStack gap={4}>
-          <HStack 
-            gap={3} 
-            display={{ base: 'none', md: 'flex' }}
-            cursor="pointer"
-            p={2}
-            borderRadius="lg"
-            _hover={{ bg: 'gray.100' }}
-            onClick={() => router.push('/profile')}
-            transition="all 0.2s"
-          >
+        <HStack gap={3}>
+          <HStack gap={2.5} py={1.5} px={2}>
             <Avatar.Root size="sm">
-              <Avatar.Fallback bg="gray.900" color="white">
+              <Avatar.Fallback 
+                bg="gray.900" 
+                color="white" 
+                fontSize="xs" 
+                fontWeight="600"
+              >
                 {getInitials(user?.firstName, user?.lastName)}
               </Avatar.Fallback>
             </Avatar.Root>
-            <VStack gap={0} align="end">
-              <Text fontWeight="semibold" fontSize="sm" color="gray.800">{user?.firstName} {user?.lastName}</Text>
-              <Text fontSize="xs" color="gray.500">{user?.role}</Text>
+            <VStack gap={0} align="start" display={{ base: 'none', md: 'flex' }}>
+              <Text fontWeight="600" fontSize="sm" color="gray.800" lineHeight="1.2">
+                {user?.firstName} {user?.lastName}
+              </Text>
+              <Text fontSize="xs" color="gray.500" lineHeight="1.2">{user?.role?.replace(/_/g, ' ')}</Text>
             </VStack>
           </HStack>
-          
-          <Menu.Root>
-            <Menu.Trigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                borderRadius="lg"
-                _hover={{ bg: 'gray.100' }}
-              >
-                <FiLogOut />
-              </Button>
-            </Menu.Trigger>
-            <Menu.Content>
-              <Menu.Item value="profile" onClick={() => router.push('/profile')}>
-                <HStack gap={2}>
-                  <FiUser />
-                  <Text>My Profile</Text>
-                </HStack>
-              </Menu.Item>
-              <Menu.Item value="logout" onClick={handleLogout}>
-                <HStack gap={2}>
-                  <FiLogOut />
-                  <Text>Logout</Text>
-                </HStack>
-              </Menu.Item>
-            </Menu.Content>
-          </Menu.Root>
+
+          <Box w="1px" h="24px" bg="gray.200" display={{ base: 'none', md: 'block' }} />
+
+          <IconButton
+            aria-label="Logout"
+            onClick={handleLogout}
+            variant="ghost"
+            size="sm"
+            borderRadius="lg"
+            color="gray.500"
+            _hover={{ bg: 'red.50', color: 'red.600' }}
+            transition="all 0.15s"
+          >
+            <FiLogOut size={17} />
+          </IconButton>
         </HStack>
       </Flex>
     </Box>

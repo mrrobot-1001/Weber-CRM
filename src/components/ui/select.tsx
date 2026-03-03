@@ -38,10 +38,10 @@ export function Select({
           width: '100%',
           padding: '10px 16px',
           paddingRight: '40px',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
+          border: '1px solid #edf2f7',
+          borderRadius: '10px',
           backgroundColor: 'white',
-          fontSize: '16px',
+          fontSize: '14px',
           color: value ? '#1a202c' : '#a0aec0',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,
@@ -58,7 +58,7 @@ export function Select({
           e.target.style.boxShadow = '0 0 0 1px #1a202c';
         }}
         onBlur={(e) => {
-          e.target.style.borderColor = '#e2e8f0';
+          e.target.style.borderColor = '#edf2f7';
           e.target.style.boxShadow = 'none';
         }}
       >

@@ -7,9 +7,9 @@ interface LogoProps extends BoxProps {
 
 export function Logo({ size = 'md', ...props }: LogoProps) {
   const sizes = {
-    sm: { width: 40, height: 40 },
-    md: { width: 60, height: 60 },
-    lg: { width: 80, height: 80 },
+    sm: { width: 36, height: 36 },
+    md: { width: 52, height: 52 },
+    lg: { width: 72, height: 72 },
   };
 
   const dimensions = sizes[size];
@@ -23,8 +23,10 @@ export function Logo({ size = 'md', ...props }: LogoProps) {
         height={dimensions.height}
         priority
         style={{
-          width: 'auto',
-          height: 'auto',
+          width: dimensions.width,
+          height: dimensions.height,
+          borderRadius: '12px',
+          objectFit: 'cover',
         }}
       />
     </Box>

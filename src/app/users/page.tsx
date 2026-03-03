@@ -214,7 +214,7 @@ export default function UsersPage() {
         showBack={true} 
       />
       
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="container.xl" py={8} className="page-enter">
         <VStack gap={6} align="stretch">
           {tempPassword && (
             <Card.Root borderRadius="xl" bg="blue.50" borderColor="blue.200" borderWidth="1px">
@@ -237,12 +237,12 @@ export default function UsersPage() {
           )}
 
           {canManageUsers && (
-            <Card.Root borderRadius="xl" boxShadow="sm">
+            <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
                 <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="brand.100" color="brand.600"><FiPlus size={20} /></Box>
+                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiPlus size={20} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.800">Create New User</Heading>
+                    <Heading size="md" color="gray.900" fontWeight="600">Create New User</Heading>
                     <Text fontSize="sm" color="gray.500">Add a new team member to the system</Text>
                   </VStack>
                 </HStack>
@@ -305,13 +305,13 @@ export default function UsersPage() {
             </Card.Root>
           )}
 
-          <Card.Root borderRadius="xl" boxShadow="sm">
+          <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
             <Card.Header pb={2}>
               <HStack justify="space-between">
                 <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.100" color="gray.600"><FiUser size={20} /></Box>
+                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiUser size={20} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md">All Users</Heading>
+                    <Heading size="md" fontWeight="600">All Users</Heading>
                     <Text fontSize="sm" color="gray.500">{activeUsers.length} active users</Text>
                   </VStack>
                 </HStack>

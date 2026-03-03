@@ -69,48 +69,49 @@ export function ConfirmModal({
         left={0}
         right={0}
         bottom={0}
-        bg="blackAlpha.600"
+        bg="blackAlpha.500"
         display="flex"
         alignItems="center"
         justifyContent="center"
         zIndex={1000}
         onClick={onClose}
-        animation="fadeIn 0.2s ease-out"
+        animation="fadeIn 0.15s ease-out"
       >
         <Card.Root
           maxW="md"
           w="90%"
           onClick={(e) => e.stopPropagation()}
-          boxShadow="2xl"
-          borderRadius="xl"
+          boxShadow="xl"
+          borderRadius="2xl"
           overflow="hidden"
           animation="slideUp 0.2s ease-out"
         >
           <Card.Header pb={2}>
             <HStack gap={3}>
               <Box
-                p={3}
-                borderRadius="full"
+                p={2.5}
+                borderRadius="xl"
                 bg={styles.iconBg}
                 color={styles.iconColor}
               >
-                <IconComponent size={24} />
+                <IconComponent size={20} />
               </Box>
-              <Heading size="md">{title}</Heading>
+              <Heading size="md" fontWeight="600">{title}</Heading>
             </HStack>
           </Card.Header>
           <Card.Body py={4}>
-            <Text color="gray.600" lineHeight="tall">
+            <Text color="gray.600" fontSize="sm" lineHeight="tall">
               {message}
             </Text>
           </Card.Body>
-          <Box p={4} bg="gray.50" borderTop="1px" borderColor="gray.200">
+          <Box px={5} py={4} borderTop="1px" borderColor="gray.100">
             <HStack justify="flex-end" gap={3}>
               <Button
                 variant="outline"
                 onClick={onClose}
                 disabled={isLoading}
                 borderRadius="lg"
+                size="sm"
                 px={5}
               >
                 {cancelText}
@@ -120,10 +121,11 @@ export function ConfirmModal({
                 onClick={onConfirm}
                 loading={isLoading}
                 borderRadius="lg"
+                size="sm"
                 px={5}
               >
                 <HStack gap={2}>
-                  <IconComponent size={16} />
+                  <IconComponent size={14} />
                   <Text>{confirmText}</Text>
                 </HStack>
               </Button>

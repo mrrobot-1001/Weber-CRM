@@ -207,14 +207,14 @@ function EvaluationsPageContent() {
         showBack={true} 
       />
 
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="container.xl" py={8} className="page-enter">
         <VStack gap={6} align="stretch">
         {canEvaluate ? (
           <Box mb={8}>
-            <Card.Root borderRadius="lg" borderWidth="1px" borderColor="gray.200" bg="white" boxShadow="none">
+            <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100" bg="white" boxShadow="none">
               <Card.Header pb={2}>
                 <HStack gap={3}>
-                  <Box p={2} borderRadius="md" bg="purple.100" color="purple.600"><FiStar size={18} /></Box>
+                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiStar size={18} /></Box>
                   <VStack align="start" gap={0}>
                     <Heading size="md" color="gray.900" fontWeight="600">Evaluate Submission</Heading>
                     <Text fontSize="sm" color="gray.500">Review and rate team member submissions</Text>
@@ -247,7 +247,7 @@ function EvaluationsPageContent() {
           </Box>
           ) : (
             <Box mb={8}>
-            <Card.Root borderRadius="lg" bg="gray.50" borderColor="gray.200" borderWidth="1px" boxShadow="none">
+            <Card.Root borderRadius="xl" bg="gray.50" borderColor="gray.100" borderWidth="1px" boxShadow="none">
               <Card.Body>
                 <HStack gap={3}>
                   <Box p={2} borderRadius="md" bg="white" color="gray.600"><FiStar size={18} /></Box>
@@ -258,7 +258,7 @@ function EvaluationsPageContent() {
           </Box>
           )}
 
-          <Card.Root borderRadius="lg" borderWidth="1px" borderColor="gray.200" bg="white" boxShadow="none">
+          <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100" bg="white" boxShadow="none">
             <Card.Header pb={4}>
               <VStack align="stretch" gap={4}>
                 <HStack justify="space-between">
@@ -269,7 +269,7 @@ function EvaluationsPageContent() {
                 </HStack>
 
                 {/* Filters */}
-                <VStack align="stretch" gap={3} pb={2} borderBottom="1px" borderColor="gray.200">
+                <VStack align="stretch" gap={3} pb={2} borderBottom="1px" borderColor="gray.100">
                   <HStack gap={2} align="flex-start">
                     <FiFilter size={18} color="gray.600" />
                     <Text fontWeight="medium" fontSize="sm" color="gray.700">Filters</Text>
