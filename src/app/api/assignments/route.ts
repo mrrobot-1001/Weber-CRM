@@ -3,6 +3,7 @@ import { getAuthenticatedUser, jsonResponse, errorResponse } from '@/lib/server/
 import { query } from '@/lib/db/pool';
 import { validateBody, createWorkAssignmentSchema } from '@/lib/utils/validation';
 import { canAssignWork } from '@/lib/server/permissions';
+import { notifyUser } from '@/lib/server/notifications';
 import logger from '@/lib/db/logger';
 
 export const dynamic = 'force-dynamic';
@@ -87,6 +88,14 @@ export async function POST(req: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, title, description, assigned_by, assigned_to, status, priority, due_date, created_at`,
       [title, description, user.userId, assignedTo, priority || 'medium', dueDate || null]
+    );
+
+    notifyUser(
+      Number(assignedTo),
+      'New assignment',
+      `${user.username} assigned: ${title}`,
+      'assignment',
+      '/assignments',
     );
 
     logger.info(`Work assignment created by ${user.username}`);

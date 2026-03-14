@@ -78,3 +78,70 @@ input, select, textarea {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ===== Custom mobile dropdown menu animations ===== */
+@keyframes mobileBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mobileDropdownIn {
+  from { opacity: 0; transform: translateY(-8px) scaleY(0.96); }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+@keyframes mobileDropdownOut {
+  from { opacity: 1; transform: translateY(0) scaleY(1); }
+  to { opacity: 0; transform: translateY(-8px) scaleY(0.96); }
+}
+
+/* ===== Mobile-specific optimizations ===== */
+@media (max-width: 767px) {
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent layout shift */
+  html {
+    overflow-y: scroll;
+  }
+
+  /* --- Aggressive spacing reductions --- */
+
+  /* Inputs, textareas, selects: smaller everywhere */
+  input, textarea, select {
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+  }
+  textarea {
+    min-height: 56px !important;
+    max-height: 100px !important;
+  }
+
+  /* Smaller cards globally */
+  [data-part="body"] {
+    padding: 10px !important;
+  }
+  [data-part="header"] {
+    padding: 10px 10px 6px !important;
+  }
+
+  /* Tighter form grid gap */
+  .chakra-grid {
+    gap: 8px !important;
+  }
+
+  /* Smaller buttons */
+  .chakra-button {
+    font-size: 12px !important;
+  }
+
+  /* Reduce heading sizes */
+  h1, h2, h3, h4 {
+    font-size: clamp(14px, 4vw, 18px) !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Compact card borders */
+  [data-part="root"] {
+    border-radius: 10px !important;
+  }
+}

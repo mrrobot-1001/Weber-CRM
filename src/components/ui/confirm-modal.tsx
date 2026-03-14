@@ -79,7 +79,7 @@ export function ConfirmModal({
       >
         <Card.Root
           maxW="md"
-          w="90%"
+          w="92%"
           onClick={(e) => e.stopPropagation()}
           boxShadow="xl"
           borderRadius="2xl"

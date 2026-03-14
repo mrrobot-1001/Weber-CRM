@@ -4,6 +4,7 @@ import { query } from '@/lib/db/pool';
 import { validateBody, createEvaluationSchema } from '@/lib/utils/validation';
 import { canEvaluate, ROLES } from '@/lib/server/permissions';
 import { logAuditTrail } from '@/lib/services/sessionService';
+import { notifyUser } from '@/lib/server/notifications';
 import logger from '@/lib/db/logger';
 
 export const dynamic = 'force-dynamic';
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     // Verify submission exists
     const submission = await query(`
-      SELECT ws.id, wa.assigned_by FROM work_submissions ws
+      SELECT ws.id, ws.submitted_by, wa.assigned_by, wa.title FROM work_submissions ws
       JOIN work_assignments wa ON ws.assignment_id = wa.id
       WHERE ws.id = $1
     `, [submissionId]);
@@ -128,6 +129,17 @@ export async function POST(req: NextRequest) {
       ipAddress,
       userAgent
     ).catch(() => {});
+
+    const submittedByUserId = Number(submission.rows[0].submitted_by);
+    if (!Number.isNaN(submittedByUserId) && submittedByUserId !== user.userId) {
+      notifyUser(
+        submittedByUserId,
+        'Submission evaluated',
+        `${user.username} rated your submission (${rating}/5) for: ${submission.rows[0].title}`,
+        'evaluation',
+        '/evaluations',
+      );
+    }
 
     logger.info(`Evaluation created by ${user.username}`);
 

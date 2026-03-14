@@ -24,7 +24,7 @@ export function Select({
   return (
     <Box w="full">
       {label && (
-        <Text mb={2} fontWeight="medium" fontSize="sm">
+        <Text mb={1} fontWeight="medium" fontSize="xs">
           {label}
           {required && <Text as="span" color="red.500" ml={1}>*</Text>}
         </Text>
@@ -36,12 +36,12 @@ export function Select({
         required={required}
         style={{
           width: '100%',
-          padding: '10px 16px',
-          paddingRight: '40px',
+          padding: '7px 10px',
+          paddingRight: '32px',
           border: '1px solid #edf2f7',
-          borderRadius: '10px',
+          borderRadius: '8px',
           backgroundColor: 'white',
-          fontSize: '14px',
+          fontSize: '13px',
           color: value ? '#1a202c' : '#a0aec0',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,
@@ -49,9 +49,9 @@ export function Select({
           outline: 'none',
           transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
           backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-          backgroundPosition: 'right 12px center',
+          backgroundPosition: 'right 10px center',
           backgroundRepeat: 'no-repeat',
-          backgroundSize: '20px 20px',
+          backgroundSize: '18px 18px',
         }}
         onFocus={(e) => {
           e.target.style.borderColor = '#1a202c';

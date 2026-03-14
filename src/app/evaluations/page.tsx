@@ -207,23 +207,23 @@ function EvaluationsPageContent() {
         showBack={true} 
       />
 
-      <Container maxW="container.xl" py={8} className="page-enter">
-        <VStack gap={6} align="stretch">
+      <Container maxW="container.xl" py={{ base: 4, md: 8 }} className="page-enter">
+        <VStack gap={{ base: 3, md: 6 }} align="stretch">
         {canEvaluate ? (
-          <Box mb={8}>
+          <Box mb={{ base: 3, md: 8 }}>
             <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100" bg="white" boxShadow="none">
               <Card.Header pb={2}>
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiStar size={18} /></Box>
+                <HStack gap={2}>
+                  <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600"><FiStar size={16} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Evaluate Submission</Heading>
-                    <Text fontSize="sm" color="gray.500">Review and rate team member submissions</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Evaluate Submission</Heading>
+                    <Text fontSize="xs" color="gray.500">Review and rate team member submissions</Text>
                   </VStack>
                 </HStack>
               </Card.Header>
-              <Card.Body pt={4}>
+              <Card.Body pt={2}>
                 <form onSubmit={handleCreateEvaluation}>
-                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={{ base: 2, md: 4 }}>
                     <Box>
                       <Select label="Submission" value={evaluationForm.submissionId} onChange={(value) => setEvaluationForm({ ...evaluationForm, submissionId: value })} options={submissionOptions} placeholder="Select submission to evaluate" required />
                     </Box>
@@ -231,14 +231,14 @@ function EvaluationsPageContent() {
                       <Select label="Rating" value={evaluationForm.rating} onChange={(value) => setEvaluationForm({ ...evaluationForm, rating: value })} options={RATING_OPTIONS} />
                     </Box>
                     <Box gridColumn={{ base: 'auto', md: '1 / -1' }}>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">Comments</Text>
-                      <Textarea value={evaluationForm.comments} onChange={(e) => setEvaluationForm({ ...evaluationForm, comments: e.target.value })} placeholder="Provide feedback on this submission..." borderRadius="lg" rows={3} />
+                      <Text mb={1} fontWeight="medium" fontSize="xs">Comments</Text>
+                      <Textarea value={evaluationForm.comments} onChange={(e) => setEvaluationForm({ ...evaluationForm, comments: e.target.value })} placeholder="Provide feedback..." borderRadius="lg" rows={2} />
                     </Box>
                   </Grid>
-                  <Button mt={6} type="submit" bg="gray.900" color="white" size="md" borderRadius="md" loading={evaluating} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
+                  <Button mt={{ base: 3, md: 6 }} type="submit" bg="gray.900" color="white" size={{ base: 'sm', md: 'md' }} borderRadius="md" loading={evaluating} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
                     <HStack gap={2}>
-                      <FiStar size={16} />
-                      <Text>Submit Evaluation</Text>
+                      <FiStar size={14} />
+                      <Text fontSize={{ base: 'xs', md: 'sm' }}>Submit Evaluation</Text>
                     </HStack>
                   </Button>
                 </form>
@@ -246,7 +246,7 @@ function EvaluationsPageContent() {
             </Card.Root>
           </Box>
           ) : (
-            <Box mb={8}>
+            <Box mb={{ base: 3, md: 8 }}>
             <Card.Root borderRadius="xl" bg="gray.50" borderColor="gray.100" borderWidth="1px" boxShadow="none">
               <Card.Body>
                 <HStack gap={3}>
@@ -263,8 +263,8 @@ function EvaluationsPageContent() {
               <VStack align="stretch" gap={4}>
                 <HStack justify="space-between">
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Evaluations</Heading>
-                    <Text fontSize="sm" color="gray.500">{filteredEvaluations.length} evaluations</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Evaluations</Heading>
+                    <Text fontSize="xs" color="gray.500">{filteredEvaluations.length} evaluations</Text>
                   </VStack>
                 </HStack>
 
@@ -335,37 +335,29 @@ function EvaluationsPageContent() {
               ) : (
                 <VStack gap={3} align="stretch">
                   {filteredEvaluations.map((evaluation) => (
-                    <Box key={evaluation.id} p={4} borderWidth="1px" borderRadius="md" bg="white" transition="all 0.15s" _hover={{ borderColor: 'gray.300', boxShadow: 'sm' }} borderLeftWidth="3px" borderLeftColor={
+                    <Box key={evaluation.id} p={{ base: 3, md: 4 }} borderWidth="1px" borderRadius="md" bg="white" transition="all 0.15s" _hover={{ borderColor: 'gray.300', boxShadow: 'sm' }} borderLeftWidth="3px" borderLeftColor={
                       evaluation.rating === 5 ? 'green.400' :
                       evaluation.rating === 4 ? 'blue.400' :
                       evaluation.rating === 3 ? 'yellow.400' :
                       evaluation.rating === 2 ? 'orange.400' :
                       'red.400'
                     }>
-                      <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
+                      <HStack justify="space-between" align="start" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
                         <Box flex={1}>
-                          <HStack mb={2} gap={2}>
-                            <Text fontWeight="600" fontSize="md" color="gray.900">{evaluation.assignment_title}</Text>
-                            <Text fontSize="xl">{evaluation.rating === 5 ? '⭐⭐⭐⭐⭐' : evaluation.rating === 4 ? '⭐⭐⭐⭐' : evaluation.rating === 3 ? '⭐⭐⭐' : evaluation.rating === 2 ? '⭐⭐' : '⭐'}</Text>
+                          <HStack mb={1} gap={2} flexWrap="wrap">
+                            <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }} color="gray.900">{evaluation.assignment_title}</Text>
+                            <Text fontSize={{ base: 'sm', md: 'xl' }}>{evaluation.rating === 5 ? '⭐⭐⭐⭐⭐' : evaluation.rating === 4 ? '⭐⭐⭐⭐' : evaluation.rating === 3 ? '⭐⭐⭐' : evaluation.rating === 2 ? '⭐⭐' : '⭐'}</Text>
                           </HStack>
                           {evaluation.comments && (
-                            <Text fontSize="sm" color="gray.600" mb={3}>{evaluation.comments}</Text>
+                            <Text fontSize="xs" color="gray.600" mb={2} lineClamp={2}>{evaluation.comments}</Text>
                           )}
-                          <HStack gap={4} flexWrap="wrap" fontSize="sm" color="gray.500">
-                            <HStack gap={1}>
-                              <Text>Submitted by: <strong>{evaluation.submitted_by_username}</strong></Text>
-                            </HStack>
-                            <HStack gap={1}>
-                              <Text>Evaluated by: <strong>{evaluation.evaluated_by_username}</strong></Text>
-                            </HStack>
-                            <HStack gap={1}>
-                              <Text>{new Date(evaluation.evaluation_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-                            </HStack>
+                          <HStack gap={{ base: 2, md: 4 }} flexWrap="wrap" fontSize="xs" color="gray.500">
+                            <Text>By: <strong>{evaluation.submitted_by_username}</strong></Text>
+                            <Text>Eval: <strong>{evaluation.evaluated_by_username}</strong></Text>
+                            <Text>{new Date(evaluation.evaluation_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Text>
                           </HStack>
                         </Box>
-                        <VStack align="end" gap={2}>
-                          <StatusBadge status={evaluation.status} />
-                        </VStack>
+                        <StatusBadge status={evaluation.status} size="sm" />
                       </HStack>
                     </Box>
                   ))}

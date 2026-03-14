@@ -221,34 +221,34 @@ function SubmissionsPageContent() {
         showBack={true} 
       />
 
-      <Container maxW="container.xl" py={8} className="page-enter">
-        <VStack gap={6} align="stretch">
+      <Container maxW="container.xl" py={{ base: 4, md: 8 }} className="page-enter">
+        <VStack gap={{ base: 3, md: 6 }} align="stretch">
           {currentUser?.role !== 'CEO' && currentUser?.role !== 'COO' && (
             <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiUpload size={20} /></Box>
+                <HStack gap={2}>
+                  <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600"><FiUpload size={16} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Submit Work</Heading>
-                    <Text fontSize="sm" color="gray.500">Submit completed assignments for review</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Submit Work</Heading>
+                    <Text fontSize="xs" color="gray.500">Submit completed assignments for review</Text>
                   </VStack>
                 </HStack>
               </Card.Header>
-              <Card.Body pt={4}>
+              <Card.Body pt={2}>
                 <form onSubmit={handleCreateSubmission}>
-                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={{ base: 2, md: 4 }}>
                     <Box>
                       <Select label="Assignment" value={submissionForm.assignmentId} onChange={(value) => setSubmissionForm({ ...submissionForm, assignmentId: value })} options={assignmentOptions} placeholder="Select assignment" required />
                     </Box>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">Submission Notes</Text>
-                      <Textarea value={submissionForm.submissionNotes} onChange={(e) => setSubmissionForm({ ...submissionForm, submissionNotes: e.target.value })} placeholder="Add any notes or comments about your submission..." borderRadius="lg" rows={3} />
+                      <Text mb={1} fontWeight="medium" fontSize="xs">Submission Notes</Text>
+                      <Textarea value={submissionForm.submissionNotes} onChange={(e) => setSubmissionForm({ ...submissionForm, submissionNotes: e.target.value })} placeholder="Add notes about your submission..." borderRadius="lg" rows={2} />
                     </Box>
                   </Grid>
-                  <Button mt={6} type="submit" bg="gray.900" color="white" size="md" borderRadius="md" loading={submitting} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
+                  <Button mt={{ base: 3, md: 6 }} type="submit" bg="gray.900" color="white" size={{ base: 'sm', md: 'md' }} borderRadius="md" loading={submitting} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
                     <HStack gap={2}>
-                      <FiUpload size={16} />
-                      <Text>Submit Work</Text>
+                      <FiUpload size={14} />
+                      <Text fontSize={{ base: 'xs', md: 'sm' }}>Submit Work</Text>
                     </HStack>
                   </Button>
                 </form>
@@ -262,11 +262,11 @@ function SubmissionsPageContent() {
             <Card.Header pb={4}>
               <VStack align="stretch" gap={4}>
                 <HStack justify="space-between">
-                  <HStack gap={3}>
-                    <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiFileText size={20} /></Box>
+                  <HStack gap={2}>
+                    <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600" display={{ base: 'none', md: 'block' }}><FiFileText size={18} /></Box>
                     <VStack align="start" gap={0}>
-                      <Heading size="md" fontWeight="600">Recent Submissions</Heading>
-                      <Text fontSize="sm" color="gray.500">{filteredSubmissions.length} submissions</Text>
+                      <Heading size={{ base: 'sm', md: 'md' }} fontWeight="600">Recent Submissions</Heading>
+                      <Text fontSize="xs" color="gray.500">{filteredSubmissions.length} submissions</Text>
                     </VStack>
                   </HStack>
                 </HStack>
@@ -309,35 +309,35 @@ function SubmissionsPageContent() {
               ) : (
                 <VStack gap={3} align="stretch">
                   {filteredSubmissions.map((submission) => (
-                    <Box key={submission.id} p={4} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
-                      <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
-                        <HStack gap={4} flex={1}>
-                          <Avatar.Root size="md">
-                            <Avatar.Fallback bg="blue.500" color="white">
+                    <Box key={submission.id} p={{ base: 3, md: 4 }} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
+                      <HStack justify="space-between" align="start" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
+                        <HStack gap={{ base: 2.5, md: 4 }} flex={1}>
+                          <Avatar.Root size="sm" display={{ base: 'none', md: 'flex' }}>
+                            <Avatar.Fallback bg="blue.500" color="white" fontSize="xs">
                               {getInitials(submission.submitted_by_username)}
                             </Avatar.Fallback>
                           </Avatar.Root>
                           <Box>
-                            <Text fontWeight="bold" fontSize="md">{submission.assignment_title}</Text>
-                            <HStack gap={2} fontSize="sm" color="gray.500" mt={1}>
-                              <FiUser size={14} />
+                            <Text fontWeight="bold" fontSize={{ base: 'sm', md: 'md' }}>{submission.assignment_title}</Text>
+                            <HStack gap={1.5} fontSize="xs" color="gray.500" mt={0.5}>
+                              <FiUser size={12} />
                               <Text>By {submission.submitted_by_username}</Text>
                             </HStack>
-                            <Text fontSize="sm" color="gray.600" mt={2}>{submission.submission_notes || 'No notes provided'}</Text>
+                            <Text fontSize="xs" color="gray.600" mt={1} lineClamp={2}>{submission.submission_notes || 'No notes provided'}</Text>
                           </Box>
                         </HStack>
-                        <VStack align="end" gap={2}>
-                          <StatusBadge status={submission.status} />
-                          <HStack gap={1} fontSize="sm" color="gray.500">
-                            <FiClock size={14} />
+                        <VStack align="end" gap={1.5}>
+                          <StatusBadge status={submission.status} size="sm" />
+                          <HStack gap={1} fontSize="xs" color="gray.500">
+                            <FiClock size={12} />
                             <Text suppressHydrationWarning>{formatDate(submission.submission_date)}</Text>
                           </HStack>
                           {canDeleteSubmissionFn(submission) && (
-                            <Button size="sm" colorScheme="red" variant="outline" borderRadius="lg"
+                            <Button size="xs" colorScheme="red" variant="outline" borderRadius="lg"
                               onClick={() => setDeleteConfirm({ id: submission.id, title: submission.assignment_title })} _hover={{ bg: 'red.50' }}>
                               <HStack gap={1}>
-                                <FiTrash2 size={14} />
-                                <Text>Delete</Text>
+                                <FiTrash2 size={12} />
+                                <Text display={{ base: 'none', md: 'inline' }}>Delete</Text>
                               </HStack>
                             </Button>
                           )}

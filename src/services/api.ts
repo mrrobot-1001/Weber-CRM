@@ -44,6 +44,16 @@ export interface Submission {
   assignment_title: string;
 }
 
+export interface AppNotification {
+  id: number;
+  title: string;
+  body: string;
+  type: string;
+  link: string | null;
+  read: boolean;
+  created_at: string;
+}
+
 class ApiService {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -203,6 +213,45 @@ class ApiService {
     const { data } = await this.client.post('/evaluations', evaluationData);
     return data;
   }
-}
 
-export const apiService = new ApiService();
+    // ── Notifications ────────────────────────────────────────────────────────────
+
+    async getNotifications(): Promise<{ data: { notifications: AppNotification[]; unreadCount: number } }> {
+      const { data } = await this.client.get('/notifications');
+      return data;
+    }
+
+    async markNotificationRead(id: number) {
+      const { data } = await this.client.patch(`/notifications/${id}`);
+      return data;
+    }
+
+    async markAllNotificationsRead() {
+      const { data } = await this.client.post('/notifications');
+      return data;
+    }
+
+    async deleteNotification(id: number) {
+      const { data } = await this.client.delete(`/notifications/${id}`);
+      return data;
+    }
+
+    // ── Web Push ─────────────────────────────────────────────────────────────────
+
+    async getVapidPublicKey(): Promise<{ publicKey: string }> {
+      const { data } = await this.client.get('/push/subscribe');
+      return data.data;
+    }
+
+    async savePushSubscription(subscription: any) {
+      const { data } = await this.client.post('/push/subscribe', subscription);
+      return data;
+    }
+
+    async removePushSubscription(endpoint: string) {
+      const { data } = await this.client.delete('/push/subscribe', { data: { endpoint } });
+      return data;
+    }
+  }
+
+  export const apiService = new ApiService();

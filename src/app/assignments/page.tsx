@@ -272,29 +272,29 @@ export default function AssignmentsPage() {
         showBack={true} 
       />
 
-      <Container maxW="container.xl" py={8} className="page-enter">
-        <VStack gap={6} align="stretch">
+      <Container maxW="container.xl" py={{ base: 4, md: 8 }} className="page-enter">
+        <VStack gap={{ base: 3, md: 6 }} align="stretch">
         {currentUser?.role !== 'ASSOCIATE' ? (
-          <Box mb={8}>
+          <Box mb={{ base: 3, md: 8 }}>
             <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100" bg="white" boxShadow="none">
               <Card.Header pb={2}>
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.700"><FiPlus size={18} /></Box>
+                <HStack gap={2}>
+                  <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.700"><FiPlus size={16} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Create Assignment</Heading>
-                    <Text fontSize="sm" color="gray.500">Assign work to team members</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Create Assignment</Heading>
+                    <Text fontSize="xs" color="gray.500">Assign work to team members</Text>
                   </VStack>
                 </HStack>
               </Card.Header>
-              <Card.Body pt={4}>
+              <Card.Body pt={2}>
                 <form onSubmit={handleCreateAssignment}>
-                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={{ base: 2, md: 4 }}>
                     <Box>
-                      <HStack gap={1} mb={2}>
-                        <FiClipboard size={14} />
-                        <Text fontWeight="medium" fontSize="sm">Title</Text>
+                      <HStack gap={1} mb={1}>
+                        <FiClipboard size={12} />
+                        <Text fontWeight="medium" fontSize="xs">Title</Text>
                       </HStack>
-                      <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Enter assignment title" borderRadius="lg" required />
+                      <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Enter assignment title" borderRadius="lg" size={{ base: 'sm', md: 'md' }} required />
                     </Box>
                     <Box>
                       <Select label="Priority" value={form.priority} onChange={(value) => setForm({ ...form, priority: value })} options={PRIORITY_OPTIONS} />
@@ -304,30 +304,30 @@ export default function AssignmentsPage() {
                         <Select label="Assign To" value={form.assignedTo} onChange={(value) => setForm({ ...form, assignedTo: value })} options={userOptions} placeholder="Select team member" required />
                       ) : (
                         <>
-                          <HStack gap={1} mb={2}>
-                            <FiUser size={14} />
-                            <Text fontWeight="medium" fontSize="sm">Assign To (User ID)</Text>
+                          <HStack gap={1} mb={1}>
+                            <FiUser size={12} />
+                            <Text fontWeight="medium" fontSize="xs">Assign To (User ID)</Text>
                           </HStack>
-                          <Input type="number" value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })} placeholder="Enter user ID" borderRadius="lg" required />
+                          <Input type="number" value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })} placeholder="Enter user ID" borderRadius="lg" size={{ base: 'sm', md: 'md' }} required />
                         </>
                       )}
                     </Box>
                     <Box>
-                      <HStack gap={1} mb={2}>
-                        <FiCalendar size={14} />
-                        <Text fontWeight="medium" fontSize="sm">Due Date</Text>
+                      <HStack gap={1} mb={1}>
+                        <FiCalendar size={12} />
+                        <Text fontWeight="medium" fontSize="xs">Due Date</Text>
                       </HStack>
-                      <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} borderRadius="lg" />
+                      <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} borderRadius="lg" size={{ base: 'sm', md: 'md' }} />
                     </Box>
                     <Box gridColumn={{ base: 'auto', md: '1 / -1' }}>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">Description</Text>
-                      <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe the assignment..." borderRadius="lg" rows={3} />
+                      <Text mb={1} fontWeight="medium" fontSize="xs">Description</Text>
+                      <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe the assignment..." borderRadius="lg" rows={2} />
                     </Box>
                   </Grid>
-                  <Button mt={6} type="submit" bg="gray.900" color="white" size="md" borderRadius="md" loading={creating} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
+                  <Button mt={{ base: 3, md: 6 }} type="submit" bg="gray.900" color="white" size={{ base: 'sm', md: 'md' }} borderRadius="md" loading={creating} _hover={{ bg: 'gray.800' }} transition="all 0.2s">
                     <HStack gap={2}>
-                      <FiPlus size={16} />
-                      <Text>Create Assignment</Text>
+                      <FiPlus size={14} />
+                      <Text fontSize={{ base: 'xs', md: 'sm' }}>Create Assignment</Text>
                     </HStack>
                   </Button>
                 </form>
@@ -335,7 +335,7 @@ export default function AssignmentsPage() {
             </Card.Root>
           </Box>
         ) : (
-           <Box mb={8}>
+           <Box mb={{ base: 3, md: 8 }}>
             <Card.Root borderRadius="xl" bg="gray.50" borderColor="gray.100" borderWidth="1px" boxShadow="none">
               <Card.Body>
                 <HStack gap={3}>
@@ -352,8 +352,8 @@ export default function AssignmentsPage() {
               <VStack align="stretch" gap={4}>
                 <HStack justify="space-between">
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Your Assignments</Heading>
-                    <Text fontSize="sm" color="gray.500">{filteredAssignments.length} assignments</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Your Assignments</Heading>
+                    <Text fontSize="xs" color="gray.500">{filteredAssignments.length} assignments</Text>
                   </VStack>
                 </HStack>
 
@@ -419,55 +419,55 @@ export default function AssignmentsPage() {
               ) : (
                 <VStack gap={3} align="stretch">
                   {filteredAssignments.map((assignment) => (
-                    <Box key={assignment.id} p={4} borderWidth="1px" borderRadius="md" bg="white" transition="all 0.15s" _hover={{ borderColor: 'gray.300' }} borderLeftWidth="3px" borderLeftColor={assignment.status === 'completed' ? 'gray.400' : isOverdue(assignment.due_date) ? 'gray.900' : 'gray.300'}>
-                      <HStack justify="space-between" align="start" flexWrap="wrap" gap={4}>
-                        <Box flex={1}>
-                          <HStack mb={2} gap={2}>
-                            <Text fontWeight="600" fontSize="md" color="gray.900">{assignment.title}</Text>
-                            <PriorityBadge priority={assignment.priority} />
-                          </HStack>
-                          <Text fontSize="sm" color="gray.600" mb={3}>{assignment.description || 'No description provided'}</Text>
-                          <HStack gap={4} flexWrap="wrap" fontSize="sm" color="gray.500">
-                            <HStack gap={1}>
-                              <FiUser size={14} />
-                              <Text>From: <strong>{assignment.assigned_by_username}</strong></Text>
+                    <Box key={assignment.id} p={{ base: 3, md: 4 }} borderWidth="1px" borderRadius="md" bg="white" transition="all 0.15s" _hover={{ borderColor: 'gray.300' }} borderLeftWidth="3px" borderLeftColor={assignment.status === 'completed' ? 'gray.400' : isOverdue(assignment.due_date) ? 'gray.900' : 'gray.300'}>
+                      <VStack align="stretch" gap={{ base: 2, md: 0 }}>
+                        <HStack justify="space-between" align="start" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
+                          <Box flex={1}>
+                            <HStack mb={1} gap={2} flexWrap="wrap">
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }} color="gray.900">{assignment.title}</Text>
+                              <PriorityBadge priority={assignment.priority} size="sm" />
                             </HStack>
-                            <HStack gap={1}>
-                              <FiUser size={14} />
-                              <Text>To: <strong>{assignment.assigned_to_username}</strong></Text>
+                            <Text fontSize="xs" color="gray.600" mb={2} lineClamp={2}>{assignment.description || 'No description provided'}</Text>
+                            <HStack gap={{ base: 2, md: 4 }} flexWrap="wrap" fontSize="xs" color="gray.500">
+                              <HStack gap={1}>
+                                <FiUser size={12} />
+                                <Text>From: <strong>{assignment.assigned_by_username}</strong></Text>
+                              </HStack>
+                              <HStack gap={1}>
+                                <FiUser size={12} />
+                                <Text>To: <strong>{assignment.assigned_to_username}</strong></Text>
+                              </HStack>
+                              <HStack gap={1}>
+                                <FiCalendar size={12} />
+                                <Text color={isOverdue(assignment.due_date) && assignment.status !== 'completed' ? 'red.500' : 'inherit'} fontWeight={isOverdue(assignment.due_date) ? 'semibold' : 'normal'}>
+                                  {formatDate(assignment.due_date)}
+                                </Text>
+                              </HStack>
                             </HStack>
-                            <HStack gap={1}>
-                              <FiCalendar size={14} />
-                              <Text color={isOverdue(assignment.due_date) && assignment.status !== 'completed' ? 'red.500' : 'inherit'} fontWeight={isOverdue(assignment.due_date) ? 'semibold' : 'normal'}>
-                                {formatDate(assignment.due_date)}
-                              </Text>
-                            </HStack>
-                          </HStack>
-                        </Box>
-                        <VStack align="end" gap={2}>
-                          <StatusBadge status={assignment.status} />
-                          <HStack gap={2}>
-                            {assignment.status !== 'completed' && assignment.assigned_to_username === currentUser?.username && (
-                              <Button size="sm" bg="gray.900" color="white" variant="solid" borderRadius="md"
-                                onClick={() => router.push(`/submissions?assignmentId=${assignment.id}`)} _hover={{ bg: 'gray.800' }}>
-                                <HStack gap={1}>
-                                  <FiCheckSquare size={14} />
-                                  <Text>Submit</Text>
-                                </HStack>
-                              </Button>
-                            )}
-                            {canDeleteAssignmentFn(assignment) && (
-                              <Button size="sm" bg="white" color="gray.700" variant="outline" borderRadius="md" borderColor="gray.300"
-                                onClick={() => setDeleteConfirm({ id: assignment.id, title: assignment.title })} _hover={{ bg: 'gray.50', borderColor: 'gray.400' }}>
-                                <HStack gap={1}>
-                                  <FiTrash2 size={14} />
-                                  <Text>Delete</Text>
-                                </HStack>
-                              </Button>
-                            )}
-                          </HStack>
-                        </VStack>
-                      </HStack>
+                          </Box>
+                          <StatusBadge status={assignment.status} size="sm" />
+                        </HStack>
+                        <HStack gap={2} justify="flex-end">
+                          {assignment.status !== 'completed' && assignment.assigned_to_username === currentUser?.username && (
+                            <Button size="xs" bg="gray.900" color="white" variant="solid" borderRadius="md"
+                              onClick={() => router.push(`/submissions?assignmentId=${assignment.id}`)} _hover={{ bg: 'gray.800' }}>
+                              <HStack gap={1}>
+                                <FiCheckSquare size={12} />
+                                <Text>Submit</Text>
+                              </HStack>
+                            </Button>
+                          )}
+                          {canDeleteAssignmentFn(assignment) && (
+                            <Button size="xs" bg="white" color="gray.700" variant="outline" borderRadius="md" borderColor="gray.300"
+                              onClick={() => setDeleteConfirm({ id: assignment.id, title: assignment.title })} _hover={{ bg: 'gray.50', borderColor: 'gray.400' }}>
+                              <HStack gap={1}>
+                                <FiTrash2 size={12} />
+                                <Text>Delete</Text>
+                              </HStack>
+                            </Button>
+                          )}
+                        </HStack>
+                      </VStack>
                     </Box>
                   ))}
                 </VStack>

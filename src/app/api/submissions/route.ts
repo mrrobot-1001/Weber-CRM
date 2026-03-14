@@ -3,6 +3,7 @@ import { getAuthenticatedUser, jsonResponse, errorResponse } from '@/lib/server/
 import { query } from '@/lib/db/pool';
 import { validateBody, createSubmissionSchema } from '@/lib/utils/validation';
 import { logAuditTrail } from '@/lib/services/sessionService';
+import { notifyUser } from '@/lib/server/notifications';
 import logger from '@/lib/db/logger';
 
 export const dynamic = 'force-dynamic';
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     // Verify assignment exists and is assigned to user
     const assignment = await query(
-      'SELECT id FROM work_assignments WHERE id = $1 AND assigned_to = $2',
+      'SELECT id, assigned_by, title FROM work_assignments WHERE id = $1 AND assigned_to = $2',
       [assignmentId, user.userId]
     );
 
@@ -104,6 +105,17 @@ export async function POST(req: NextRequest) {
       ipAddress,
       userAgent
     ).catch(() => {});
+
+    const assignedByUserId = Number(assignment.rows[0].assigned_by);
+    if (!Number.isNaN(assignedByUserId) && assignedByUserId !== user.userId) {
+      notifyUser(
+        assignedByUserId,
+        'New submission',
+        `${user.username} submitted work for: ${assignment.rows[0].title}`,
+        'submission',
+        '/submissions',
+      );
+    }
 
     logger.info(`Work submission created by ${user.username}`);
 

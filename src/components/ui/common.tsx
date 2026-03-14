@@ -18,18 +18,18 @@ export function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <Box py={16} px={6} textAlign="center">
-      <VStack gap={4}>
+    <Box py={{ base: 8, md: 16 }} px={{ base: 3, md: 6 }} textAlign="center">
+      <VStack gap={3}>
         <Box
-          p={5}
+          p={{ base: 3, md: 5 }}
           borderRadius="2xl"
           bg="gray.50"
           color="gray.400"
         >
-          {icon || <FiInbox size={40} />}
+          {icon || <FiInbox size={32} />}
         </Box>
-        <VStack gap={1}>
-          <Text fontSize="lg" fontWeight="600" color="gray.700">
+        <VStack gap={0.5}>
+          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="600" color="gray.700">
             {title}
           </Text>
           {description && (
@@ -108,7 +108,7 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <Box
-      p={6}
+      p={{ base: 3, md: 6 }}
       bg="white"
       borderRadius="xl"
       borderWidth="1px"
@@ -119,16 +119,16 @@ export function StatCard({
         boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
       }}
     >
-      <HStack justify="space-between" mb={4}>
-        <Text fontSize="sm" fontWeight="500" color="gray.500">
+      <HStack justify="space-between" mb={{ base: 2, md: 4 }}>
+        <Text fontSize="xs" fontWeight="500" color="gray.500">
           {label}
         </Text>
-        <Box p={2.5} borderRadius="xl" bg="gray.50" color="gray.600">
+        <Box p={{ base: 1.5, md: 2.5 }} borderRadius="xl" bg="gray.50" color="gray.600">
           {icon}
         </Box>
       </HStack>
-      <VStack align="start" gap={1}>
-        <Text fontSize="3xl" fontWeight="700" color="gray.900" letterSpacing="-0.02em">
+      <VStack align="start" gap={0.5}>
+        <Text fontSize={{ base: 'xl', md: '3xl' }} fontWeight="700" color="gray.900" letterSpacing="-0.02em">
           {value}
         </Text>
         {trend && (

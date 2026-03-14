@@ -13,9 +13,8 @@ import {
   Grid,
   Card,
   Flex,
-  Drawer,
-  useDisclosure,
 } from '@chakra-ui/react';
+import { useState as useMenuState } from 'react';
 import { FiUsers, FiClipboard, FiCheckSquare, FiBarChart2, FiPlus, FiUser, FiStar } from 'react-icons/fi';
 import { Navbar } from '@/components/navbar';
 import { apiService, User } from '@/services/api';
@@ -32,19 +31,21 @@ interface NavItem {
 
 function SidebarNav({ items, router, onNavigate }: { items: NavItem[]; router: any; onNavigate?: () => void }) {
   return (
-    <VStack gap={1} align="stretch">
+    <VStack gap={0.5} align="stretch">
       {items.map((item) => (
         <Button
           key={item.href}
           variant={item.active ? 'solid' : 'ghost'}
           justifyContent="flex-start"
-          borderRadius="lg"
+          borderRadius="md"
           bg={item.active ? 'gray.900' : undefined}
           color={item.active ? 'white' : undefined}
-          py={5}
+          py={{ base: 2.5, md: 5 }}
           px={3}
-          fontSize="sm"
+          fontSize={{ base: 'xs', md: 'sm' }}
           fontWeight={item.active ? '600' : '500'}
+          h="auto"
+          minH={0}
           _hover={item.active ? { bg: 'gray.800' } : { bg: 'gray.50' }}
           transition="all 0.15s"
           onClick={() => {
@@ -54,7 +55,7 @@ function SidebarNav({ items, router, onNavigate }: { items: NavItem[]; router: a
             }
           }}
         >
-          <Box mr={2.5} opacity={item.active ? 1 : 0.7}>{item.icon}</Box>
+          <Box mr={2} opacity={item.active ? 1 : 0.7}>{item.icon}</Box>
           {item.label}
         </Button>
       ))}
@@ -64,7 +65,7 @@ function SidebarNav({ items, router, onNavigate }: { items: NavItem[]; router: a
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { open, onOpen, onClose } = useDisclosure();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -140,21 +141,45 @@ export default function DashboardPage() {
         title="Weber CRM" 
         subtitle="Dashboard" 
         user={user} 
-        onMenuClick={onOpen} 
+        onMenuClick={() => setMenuOpen(!menuOpen)}
+        isMenuOpen={menuOpen}
       />
 
-      {/* Mobile Sidebar Drawer */}
-      <Drawer.Root open={open} onOpenChange={({ open }) => open ? onOpen() : onClose()} placement="start">
-        <Drawer.Backdrop />
-        <Drawer.Content>
-          <Drawer.Header borderBottom="1px" borderColor="gray.100">
-            <Drawer.Title fontWeight="600" fontSize="md">Navigation</Drawer.Title>
-          </Drawer.Header>
-          <Drawer.Body py={3}>
-            <SidebarNav items={navItems} router={router} onNavigate={onClose} />
-          </Drawer.Body>
-        </Drawer.Content>
-      </Drawer.Root>
+      {/* Mobile Dropdown Menu */}
+      {menuOpen && (
+        <>
+          {/* Backdrop */}
+          <Box
+            position="fixed"
+            inset={0}
+            zIndex={40}
+            bg="blackAlpha.300"
+            onClick={() => setMenuOpen(false)}
+            style={{
+              animation: 'mobileBackdropIn 0.15s ease-out forwards',
+            }}
+          />
+          {/* Dropdown Panel */}
+          <Box
+            position="fixed"
+            top="44px"
+            left={0}
+            right={0}
+            zIndex={45}
+            bg="white"
+            boxShadow="0 8px 30px rgba(0,0,0,0.12)"
+            borderBottomRadius="xl"
+            style={{
+              transformOrigin: 'top center',
+              animation: 'mobileDropdownIn 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) forwards',
+            }}
+          >
+            <Box px={3} py={2}>
+              <SidebarNav items={navItems} router={router} onNavigate={() => setMenuOpen(false)} />
+            </Box>
+          </Box>
+        </>
+      )}
 
       <Flex>
         {/* Desktop Sidebar */}
@@ -172,29 +197,29 @@ export default function DashboardPage() {
         </Box>
 
         {/* Main Content */}
-        <Box flex="1" p={{ base: 4, md: 8 }} className="page-enter">
+        <Box flex="1" p={{ base: 3, md: 8 }} className="page-enter">
           <Container maxW="container.xl">
-            <VStack gap={8} align="stretch">
+            <VStack gap={{ base: 4, md: 8 }} align="stretch">
               {/* Welcome Header */}
               <Box>
-                <Text fontSize="xs" color="gray.400" mb={1} fontWeight="500" textTransform="uppercase" letterSpacing="0.05em">
+                <Text fontSize="xs" color="gray.400" mb={0.5} fontWeight="500" textTransform="uppercase" letterSpacing="0.05em">
                   {currentDate}
                 </Text>
-                <Heading size="xl" mb={1} color="gray.900" fontWeight="700" letterSpacing="-0.01em">
+                <Heading size={{ base: 'lg', md: 'xl' }} mb={0.5} color="gray.900" fontWeight="700" letterSpacing="-0.01em">
                   Welcome back, {user?.firstName} 👋
                 </Heading>
-                <Text color="gray.500" fontSize="sm">Here's an overview of your workspace</Text>
+                <Text color="gray.500" fontSize={{ base: 'xs', md: 'sm' }}>Here's an overview of your workspace</Text>
               </Box>
 
               {/* Stats Grid */}
               {loading ? (
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+                <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }} gap={{ base: 3, md: 6 }}>
                   <DashboardCardSkeleton />
                   <DashboardCardSkeleton />
                   <DashboardCardSkeleton />
                 </Grid>
               ) : (
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+                <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }} gap={{ base: 3, md: 6 }}>
                   <StatCard
                     label="Total Users"
                     value={stats.totalUsers}
@@ -218,18 +243,18 @@ export default function DashboardPage() {
 
               {/* Quick Actions */}
               <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100" bg="white" boxShadow="none">
-                <Card.Header pb={2}>
-                  <Heading size="md" color="gray.900" fontWeight="600">Quick Actions</Heading>
-                  <Text fontSize="sm" color="gray.500" mt={0.5}>
+                <Card.Header pb={1}>
+                  <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Quick Actions</Heading>
+                  <Text fontSize="xs" color="gray.500" mt={0.5}>
                     Jump to common tasks
                   </Text>
                 </Card.Header>
                 <Card.Body pt={2}>
-                  <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
+                  <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }} gap={{ base: 2, md: 4 }}>
                     {isManagementRole && (
                       <>
                         <Button 
-                          size="lg" 
+                          size={{ base: 'md', md: 'lg' }} 
                           onClick={() => router.push('/users')}
                           borderRadius="xl"
                           bg="gray.50"
@@ -238,35 +263,37 @@ export default function DashboardPage() {
                           borderColor="gray.100"
                           _hover={{ bg: 'gray.100', borderColor: 'gray.200' }}
                           transition="all 0.15s"
-                          py={8}
+                          py={{ base: 5, md: 8 }}
+                          h="auto"
                         >
-                          <VStack gap={2}>
-                            <FiUsers size={22} />
-                            <Text fontWeight="600" fontSize="sm">Manage Users</Text>
+                          <VStack gap={1.5}>
+                            <FiUsers size={18} />
+                            <Text fontWeight="600" fontSize="xs">Manage Users</Text>
                           </VStack>
                         </Button>
                         <Button 
-                          size="lg" 
+                          size={{ base: 'md', md: 'lg' }} 
                           onClick={() => router.push('/assignments')}
                           borderRadius="xl"
                           bg="gray.900"
                           color="white"
                           _hover={{ bg: 'gray.800' }}
                           transition="all 0.15s"
-                          py={8}
+                          py={{ base: 5, md: 8 }}
+                          h="auto"
                         >
-                          <VStack gap={2}>
+                          <VStack gap={1.5}>
                             <HStack gap={1}>
-                              <FiClipboard size={20} />
-                              <FiPlus size={14} />
+                              <FiClipboard size={18} />
+                              <FiPlus size={12} />
                             </HStack>
-                            <Text fontWeight="600" fontSize="sm">Create Assignment</Text>
+                            <Text fontWeight="600" fontSize="xs">Create Assignment</Text>
                           </VStack>
                         </Button>
                       </>
                     )}
                     <Button 
-                      size="lg" 
+                      size={{ base: 'md', md: 'lg' }} 
                       onClick={() => router.push('/submissions')}
                       borderRadius="xl"
                       bg="gray.50"
@@ -275,11 +302,12 @@ export default function DashboardPage() {
                       borderColor="gray.100"
                       _hover={{ bg: 'gray.100', borderColor: 'gray.200' }}
                       transition="all 0.15s"
-                      py={8}
+                      py={{ base: 5, md: 8 }}
+                      h="auto"
                     >
-                      <VStack gap={2}>
-                        <FiCheckSquare size={22} />
-                        <Text fontWeight="600" fontSize="sm">{isManagementRole ? 'View Submissions' : 'Submit Work'}</Text>
+                      <VStack gap={1.5}>
+                        <FiCheckSquare size={18} />
+                        <Text fontWeight="600" fontSize="xs">{isManagementRole ? 'View Submissions' : 'Submit Work'}</Text>
                       </VStack>
                     </Button>
                   </Grid>

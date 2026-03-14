@@ -214,8 +214,8 @@ export default function UsersPage() {
         showBack={true} 
       />
       
-      <Container maxW="container.xl" py={8} className="page-enter">
-        <VStack gap={6} align="stretch">
+      <Container maxW="container.xl" py={{ base: 4, md: 8 }} className="page-enter">
+        <VStack gap={{ base: 3, md: 6 }} align="stretch">
           {tempPassword && (
             <Card.Root borderRadius="xl" bg="blue.50" borderColor="blue.200" borderWidth="1px">
               <Card.Body>
@@ -239,65 +239,65 @@ export default function UsersPage() {
           {canManageUsers && (
             <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiPlus size={20} /></Box>
+                <HStack gap={2}>
+                  <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600"><FiPlus size={16} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Create New User</Heading>
-                    <Text fontSize="sm" color="gray.500">Add a new team member to the system</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Create New User</Heading>
+                    <Text fontSize="xs" color="gray.500">Add a new team member to the system</Text>
                   </VStack>
                 </HStack>
               </Card.Header>
-              <Card.Body pt={4}>
+              <Card.Body pt={2}>
                 <form onSubmit={handleCreateUser}>
-                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={{ base: 2, md: 4 }}>
                     <Box>
-                      <HStack gap={1} mb={2}>
-                        <FiMail size={14} />
-                        <Text fontWeight="medium" fontSize="sm">Email</Text>
+                      <HStack gap={1} mb={1}>
+                        <FiMail size={12} />
+                        <Text fontWeight="medium" fontSize="xs">Email</Text>
                       </HStack>
-                      <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@company.com" borderRadius="lg" required />
+                      <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@company.com" borderRadius="lg" size={{ base: 'sm', md: 'md' }} required />
                     </Box>
                     <Box>
-                      <HStack gap={1} mb={2}>
-                        <FiUser size={14} />
-                        <Text fontWeight="medium" fontSize="sm">Username</Text>
+                      <HStack gap={1} mb={1}>
+                        <FiUser size={12} />
+                        <Text fontWeight="medium" fontSize="xs">Username</Text>
                       </HStack>
-                      <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="john_doe" borderRadius="lg" required />
+                      <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="john_doe" borderRadius="lg" size={{ base: 'sm', md: 'md' }} required />
                     </Box>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">First Name</Text>
-                      <Input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} placeholder="John" borderRadius="lg" required />
+                      <Text mb={1} fontWeight="medium" fontSize="xs">First Name</Text>
+                      <Input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} placeholder="John" borderRadius="lg" size={{ base: 'sm', md: 'md' }} required />
                     </Box>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">Last Name</Text>
-                      <Input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="Doe" borderRadius="lg" required />
+                      <Text mb={1} fontWeight="medium" fontSize="xs">Last Name</Text>
+                      <Input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="Doe" borderRadius="lg" size={{ base: 'sm', md: 'md' }} required />
                     </Box>
                     <Box>
                       <Select label="Role" value={form.roleId} onChange={(value) => setForm({ ...form, roleId: value })} options={roleOptions} required />
                     </Box>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">Department ID (optional)</Text>
-                      <Input type="number" value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })} placeholder="1" borderRadius="lg" />
+                      <Text mb={1} fontWeight="medium" fontSize="xs">Department ID (optional)</Text>
+                      <Input type="number" value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })} placeholder="1" borderRadius="lg" size={{ base: 'sm', md: 'md' }} />
                     </Box>
                     <Box>
-                      <Text mb={2} fontWeight="medium" fontSize="sm">Manager ID (optional)</Text>
-                      <Input type="number" value={form.managerId} onChange={(e) => setForm({ ...form, managerId: e.target.value })} placeholder="1" borderRadius="lg" />
+                      <Text mb={1} fontWeight="medium" fontSize="xs">Manager ID (optional)</Text>
+                      <Input type="number" value={form.managerId} onChange={(e) => setForm({ ...form, managerId: e.target.value })} placeholder="1" borderRadius="lg" size={{ base: 'sm', md: 'md' }} />
                     </Box>
                   </Grid>
                   <Button 
-                    mt={6} 
+                    mt={{ base: 3, md: 6 }} 
                     type="submit" 
                     bg="gray.900"
                     color="white"
-                    size="md" 
+                    size={{ base: 'sm', md: 'md' }} 
                     borderRadius="md" 
                     loading={creating}
                     _hover={{ bg: 'gray.800' }} 
                     transition="all 0.15s"
                   >
                     <HStack gap={2}>
-                      <FiPlus size={16} />
-                      <Text>Create User</Text>
+                      <FiPlus size={14} />
+                      <Text fontSize={{ base: 'xs', md: 'sm' }}>Create User</Text>
                     </HStack>
                   </Button>
                 </form>
@@ -308,11 +308,11 @@ export default function UsersPage() {
           <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
             <Card.Header pb={2}>
               <HStack justify="space-between">
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiUser size={20} /></Box>
+                <HStack gap={2}>
+                  <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600" display={{ base: 'none', md: 'block' }}><FiUser size={18} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" fontWeight="600">All Users</Heading>
-                    <Text fontSize="sm" color="gray.500">{activeUsers.length} active users</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} fontWeight="600">All Users</Heading>
+                    <Text fontSize="xs" color="gray.500">{activeUsers.length} active users</Text>
                   </VStack>
                 </HStack>
               </HStack>
@@ -325,30 +325,30 @@ export default function UsersPage() {
               ) : (
                 <VStack gap={3} align="stretch">
                   {activeUsers.map((u) => (
-                    <Box key={u.id} p={4} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
-                      <HStack justify="space-between" align="center" flexWrap="wrap" gap={4}>
-                        <HStack gap={4}>
+                    <Box key={u.id} p={{ base: 3, md: 4 }} borderWidth="1px" borderRadius="xl" bg="white" transition="all 0.2s" _hover={{ boxShadow: 'md', borderColor: 'gray.300' }}>
+                      <HStack justify="space-between" align="center" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
+                        <HStack gap={{ base: 2.5, md: 4 }}>
                           <Avatar.Root 
-                            size="md"
+                            size="sm"
                           >
-                            <Avatar.Fallback bg="brand.500" color="white">
+                            <Avatar.Fallback bg="brand.500" color="white" fontSize="xs">
                               {getInitials(u.first_name || u.firstName, u.last_name || u.lastName)}
                             </Avatar.Fallback>
                           </Avatar.Root>
                           <Box>
-                            <Text fontWeight="bold" fontSize="md">{(u.first_name || u.firstName)} {(u.last_name || u.lastName)}</Text>
-                            <Text fontSize="sm" color="gray.500">{u.email}</Text>
-                            <Text fontSize="xs" color="gray.400">@{u.username}</Text>
+                            <Text fontWeight="bold" fontSize={{ base: 'sm', md: 'md' }}>{(u.first_name || u.firstName)} {(u.last_name || u.lastName)}</Text>
+                            <Text fontSize="xs" color="gray.500">{u.email}</Text>
+                            <Text fontSize="xs" color="gray.400" display={{ base: 'none', md: 'block' }}>@{u.username}</Text>
                           </Box>
                         </HStack>
-                        <HStack gap={4} flexWrap="wrap">
+                        <HStack gap={{ base: 2, md: 4 }} flexWrap="wrap">
                           <VStack align="end" gap={1}>
-                            <RoleBadge role={u.role} />
+                            <RoleBadge role={u.role} size="sm" />
                             <StatusBadge status={u.status || 'active'} size="sm" />
                           </VStack>
                           {canDeleteUserFn(u) && (
                             <Button 
-                              size="sm" 
+                              size="xs" 
                               colorScheme="red" 
                               variant="outline" 
                               borderRadius="lg"
@@ -356,8 +356,8 @@ export default function UsersPage() {
                               _hover={{ bg: 'red.50' }}
                             >
                               <HStack gap={1}>
-                                <FiTrash2 size={14} />
-                                <Text>Delete</Text>
+                                <FiTrash2 size={12} />
+                                <Text display={{ base: 'none', md: 'inline' }}>Delete</Text>
                               </HStack>
                             </Button>
                           )}

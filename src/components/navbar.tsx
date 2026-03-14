@@ -12,10 +12,11 @@ import {
   Avatar,
   VStack,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiLogOut, FiMenu } from 'react-icons/fi';
+import { FiArrowLeft, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { Logo } from '@/components/logo';
 import { apiService, User } from '@/services/api';
 import { toaster } from '@/components/ui/toaster';
+import { NotificationBell } from '@/components/ui/notification-bell';
 
 interface NavbarProps {
   title: string;
@@ -23,9 +24,10 @@ interface NavbarProps {
   user?: User | null;
   showBack?: boolean;
   onMenuClick?: () => void;
+  isMenuOpen?: boolean;
 }
 
-export function Navbar({ title, subtitle, user, showBack, onMenuClick }: NavbarProps) {
+export function Navbar({ title, subtitle, user, showBack, onMenuClick, isMenuOpen }: NavbarProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -53,8 +55,8 @@ export function Navbar({ title, subtitle, user, showBack, onMenuClick }: NavbarP
       backdropFilter="blur(20px)"
       borderBottom="1px solid"
       borderColor="gray.100"
-      px={{ base: 4, md: 6 }} 
-      py={3} 
+      px={{ base: 3, md: 6 }} 
+      py={{ base: 2, md: 3 }} 
       position="sticky" 
       top={0} 
       zIndex={10}
@@ -63,7 +65,7 @@ export function Navbar({ title, subtitle, user, showBack, onMenuClick }: NavbarP
         <HStack gap={3}>
           {onMenuClick && (
             <IconButton 
-              aria-label="Menu" 
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
               onClick={onMenuClick} 
               display={{ base: 'flex', md: 'none' }}
               variant="ghost"
@@ -71,7 +73,7 @@ export function Navbar({ title, subtitle, user, showBack, onMenuClick }: NavbarP
               borderRadius="lg"
               _hover={{ bg: 'gray.100' }}
             >
-              <FiMenu size={20} />
+              {isMenuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
             </IconButton>
           )}
           
@@ -102,6 +104,8 @@ export function Navbar({ title, subtitle, user, showBack, onMenuClick }: NavbarP
         </HStack>
 
         <HStack gap={3}>
+          <NotificationBell />
+
           <HStack gap={2.5} py={1.5} px={2}>
             <Avatar.Root size="sm">
               <Avatar.Fallback 

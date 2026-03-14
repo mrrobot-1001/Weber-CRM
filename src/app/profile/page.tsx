@@ -175,26 +175,26 @@ export default function ProfilePage() {
         showBack={true} 
       />
 
-      <Container maxW="container.lg" py={8} className="page-enter">
-        <VStack gap={6} align="stretch">
+      <Container maxW="container.lg" py={{ base: 4, md: 8 }} className="page-enter">
+        <VStack gap={{ base: 3, md: 6 }} align="stretch">
           {/* Profile Header Card */}
           <Card.Root borderRadius="2xl" boxShadow="sm" overflow="hidden" borderWidth="1px" borderColor="gray.100">
             <Box 
-              h="100px" 
+              h={{ base: '60px', md: '100px' }} 
               bg="gray.900"
             />
             <Card.Body position="relative" pt={0}>
-              <Flex direction={{ base: 'column', md: 'row' }} align={{ base: 'center', md: 'flex-end' }} gap={6}>
-                <Box mt="-48px">
-                  <Avatar.Root size="2xl" borderWidth="4px" borderColor="white" boxShadow="md">
-                    <Avatar.Fallback bg="gray.700" color="white" fontSize="2xl">
+              <Flex direction={{ base: 'column', md: 'row' }} align={{ base: 'center', md: 'flex-end' }} gap={{ base: 3, md: 6 }}>
+                <Box mt={{ base: '-32px', md: '-48px' }}>
+                  <Avatar.Root size={{ base: 'xl', md: '2xl' }} borderWidth="3px" borderColor="white" boxShadow="md">
+                    <Avatar.Fallback bg="gray.700" color="white" fontSize={{ base: 'lg', md: '2xl' }}>
                       {getInitials(currentUser?.firstName, currentUser?.lastName)}
                     </Avatar.Fallback>
                   </Avatar.Root>
                 </Box>
-                <VStack align={{ base: 'center', md: 'start' }} gap={1} flex={1} py={4}>
-                  <Heading size="xl" color="gray.900" fontWeight="700">{currentUser?.firstName} {currentUser?.lastName}</Heading>
-                  <Text color="gray.500" fontSize="sm">@{currentUser?.username}</Text>
+                <VStack align={{ base: 'center', md: 'start' }} gap={0.5} flex={1} py={{ base: 2, md: 4 }}>
+                  <Heading size={{ base: 'lg', md: 'xl' }} color="gray.900" fontWeight="700">{currentUser?.firstName} {currentUser?.lastName}</Heading>
+                  <Text color="gray.500" fontSize="xs">@{currentUser?.username}</Text>
                   <Box 
                     px={3} 
                     py={1} 
@@ -223,50 +223,53 @@ export default function ProfilePage() {
             </Card.Body>
           </Card.Root>
 
-          <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
+          <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={{ base: 3, md: 6 }}>
             {/* Profile Information */}
             <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiUser size={20} /></Box>
+                <HStack gap={2}>
+                  <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600"><FiUser size={16} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Personal Information</Heading>
-                    <Text fontSize="sm" color="gray.500">Your basic profile details</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Personal Information</Heading>
+                    <Text fontSize="xs" color="gray.500">Your basic profile details</Text>
                   </VStack>
                 </HStack>
               </Card.Header>
               <Card.Body pt={4}>
                 {editing ? (
                   <form onSubmit={handleSaveProfile}>
-                    <VStack gap={4}>
+                    <VStack gap={3}>
                       <Box w="full">
-                        <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">First Name</Text>
+                        <Text mb={1} fontWeight="medium" fontSize="xs" color="gray.700">First Name</Text>
                         <Input 
                           value={form.firstName} 
                           onChange={(e) => setForm({ ...form, firstName: e.target.value })} 
                           placeholder="John"
                           borderRadius="lg"
+                          size={{ base: 'sm', md: 'md' }}
                           required 
                         />
                       </Box>
                       <Box w="full">
-                        <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">Last Name</Text>
+                        <Text mb={1} fontWeight="medium" fontSize="xs" color="gray.700">Last Name</Text>
                         <Input 
                           value={form.lastName} 
                           onChange={(e) => setForm({ ...form, lastName: e.target.value })} 
                           placeholder="Doe"
                           borderRadius="lg"
+                          size={{ base: 'sm', md: 'md' }}
                           required 
                         />
                       </Box>
                       <Box w="full">
-                        <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">Email</Text>
+                        <Text mb={1} fontWeight="medium" fontSize="xs" color="gray.700">Email</Text>
                         <Input 
                           type="email"
                           value={form.email} 
                           onChange={(e) => setForm({ ...form, email: e.target.value })} 
                           placeholder="john@company.com"
                           borderRadius="lg"
+                          size={{ base: 'sm', md: 'md' }}
                           required 
                         />
                       </Box>
@@ -323,20 +326,20 @@ export default function ProfilePage() {
             {/* Security Settings */}
             <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Card.Header pb={2}>
-                <HStack gap={3}>
-                  <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiLock size={20} /></Box>
+                <HStack gap={2}>
+                  <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600"><FiLock size={16} /></Box>
                   <VStack align="start" gap={0}>
-                    <Heading size="md" color="gray.900" fontWeight="600">Security</Heading>
-                    <Text fontSize="sm" color="gray.500">Manage your password</Text>
+                    <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Security</Heading>
+                    <Text fontSize="xs" color="gray.500">Manage your password</Text>
                   </VStack>
                 </HStack>
               </Card.Header>
               <Card.Body pt={4}>
                 {changingPassword ? (
                   <form onSubmit={handleChangePassword}>
-                    <VStack gap={4}>
+                    <VStack gap={3}>
                       <Box w="full">
-                        <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">Current Password</Text>
+                        <Text mb={1} fontWeight="medium" fontSize="xs" color="gray.700">Current Password</Text>
                         <Input 
                           type="password"
                           autoComplete="current-password"
@@ -344,11 +347,12 @@ export default function ProfilePage() {
                           onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} 
                           placeholder="Enter current password"
                           borderRadius="lg"
+                          size={{ base: 'sm', md: 'md' }}
                           required 
                         />
                       </Box>
                       <Box w="full">
-                        <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">New Password</Text>
+                        <Text mb={1} fontWeight="medium" fontSize="xs" color="gray.700">New Password</Text>
                         <Input 
                           type="password"
                           autoComplete="new-password"
@@ -356,11 +360,12 @@ export default function ProfilePage() {
                           onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} 
                           placeholder="Enter new password"
                           borderRadius="lg"
+                          size={{ base: 'sm', md: 'md' }}
                           required 
                         />
                       </Box>
                       <Box w="full">
-                        <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.700">Confirm New Password</Text>
+                        <Text mb={1} fontWeight="medium" fontSize="xs" color="gray.700">Confirm New Password</Text>
                         <Input 
                           type="password"
                           autoComplete="new-password"
@@ -368,6 +373,7 @@ export default function ProfilePage() {
                           onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} 
                           placeholder="Confirm new password"
                           borderRadius="lg"
+                          size={{ base: 'sm', md: 'md' }}
                           required 
                         />
                       </Box>
@@ -423,27 +429,27 @@ export default function ProfilePage() {
           {/* Account Details */}
           <Card.Root borderRadius="xl" borderWidth="1px" borderColor="gray.100">
             <Card.Header pb={2}>
-              <HStack gap={3}>
-                <Box p={2} borderRadius="lg" bg="gray.50" color="gray.600"><FiShield size={20} /></Box>
+              <HStack gap={2}>
+                <Box p={1.5} borderRadius="lg" bg="gray.50" color="gray.600"><FiShield size={16} /></Box>
                 <VStack align="start" gap={0}>
-                  <Heading size="md" color="gray.900" fontWeight="600">Account Details</Heading>
-                  <Text fontSize="sm" color="gray.500">Your account information</Text>
+                  <Heading size={{ base: 'sm', md: 'md' }} color="gray.900" fontWeight="600">Account Details</Heading>
+                  <Text fontSize="xs" color="gray.500">Your account information</Text>
                 </VStack>
               </HStack>
             </Card.Header>
             <Card.Body pt={4}>
-              <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
-                <Box p={4} bg="gray.50" borderRadius="lg">
-                  <Text fontSize="sm" color="gray.500" mb={1}>User ID</Text>
-                  <Text fontWeight="bold" color="gray.800" fontSize="lg">{currentUser?.id}</Text>
+              <Grid templateColumns={{ base: 'repeat(3, 1fr)', md: 'repeat(3, 1fr)' }} gap={{ base: 2, md: 6 }}>
+                <Box p={{ base: 2.5, md: 4 }} bg="gray.50" borderRadius="lg">
+                  <Text fontSize="xs" color="gray.500" mb={0.5}>User ID</Text>
+                  <Text fontWeight="bold" color="gray.800" fontSize={{ base: 'sm', md: 'lg' }}>{currentUser?.id}</Text>
                 </Box>
-                <Box p={4} bg="gray.50" borderRadius="lg">
-                  <Text fontSize="sm" color="gray.500" mb={1}>Username</Text>
-                  <Text fontWeight="bold" color="gray.800" fontSize="lg">@{currentUser?.username}</Text>
+                <Box p={{ base: 2.5, md: 4 }} bg="gray.50" borderRadius="lg">
+                  <Text fontSize="xs" color="gray.500" mb={0.5}>Username</Text>
+                  <Text fontWeight="bold" color="gray.800" fontSize={{ base: 'sm', md: 'lg' }} truncate>@{currentUser?.username}</Text>
                 </Box>
-                <Box p={4} bg="gray.50" borderRadius="lg">
-                  <Text fontSize="sm" color="gray.500" mb={1}>Role ID</Text>
-                  <Text fontWeight="bold" color="gray.800" fontSize="lg">{currentUser?.roleId}</Text>
+                <Box p={{ base: 2.5, md: 4 }} bg="gray.50" borderRadius="lg">
+                  <Text fontSize="xs" color="gray.500" mb={0.5}>Role ID</Text>
+                  <Text fontWeight="bold" color="gray.800" fontSize={{ base: 'sm', md: 'lg' }}>{currentUser?.roleId}</Text>
                 </Box>
               </Grid>
             </Card.Body>
