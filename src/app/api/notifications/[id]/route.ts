@@ -5,12 +5,12 @@ import { query } from '@/lib/db/pool';
 export const dynamic = 'force-dynamic';
 
 /** PATCH /api/notifications/[id] — mark a single notification as read */
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) return errorResponse('Unauthorized', 401);
 
-    const id = parseInt(params.id);
+    const id = parseInt((await params).id);
     if (isNaN(id)) return errorResponse('Invalid notification id', 400);
 
     const result = await query(
@@ -26,12 +26,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 /** DELETE /api/notifications/[id] — delete a single notification */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) return errorResponse('Unauthorized', 401);
 
-    const id = parseInt(params.id);
+    const id = parseInt((await params).id);
     if (isNaN(id)) return errorResponse('Invalid notification id', 400);
 
     const result = await query(
